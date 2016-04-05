@@ -11,6 +11,8 @@ table {
 }
 table td {
   border: 1px solid #000;
+  width: 80px;
+  height: 20px;
 }
 table tr td:first-child, table tr:first-child {
   background-color: #D1D1D1;
