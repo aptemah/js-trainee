@@ -6,24 +6,31 @@ function tableInit(block, width, height, cellWidth, cellHeight){
   var viewportWidth = Math.max(document.documentElement.clientWidth, window.innerWidth || 0)
   var viewportHeight = Math.max(document.documentElement.clientHeight, window.innerHeight || 0)
 
+
+
   if (width == undefined)  {parentBlock.style.width  = (viewportWidth + "px");}
   if (height == undefined) {parentBlock.style.height = (viewportHeight + "px");}
   if (cellWidth == undefined) {cellWidth = 80;}
   if (cellHeight == undefined) {cellHeight = 20;}
 
-  rowsInitialAmount = Math.ceil(viewportHeight / cellHeight);
-  columnsInitialAmount = Math.ceil(viewportWidth / cellWidth);
+  var rowsInitialAmount = Math.ceil(viewportHeight / cellHeight);
+  var columnsInitialAmount = Math.ceil(viewportWidth / cellWidth);
 
-  var creatingTableDom = (function(){
+  var tableWrap = document.createElement("DIV");
+  tableWrap.id = "super-table-wrap";
+  parentBlock.appendChild(tableWrap);
+
+  var creatingTableDom = (function() {
+
     var table = document.createElement("TABLE");
     table.id = "super-table";
-    parentBlock.appendChild(table);
+    tableWrap.appendChild(table);
 
-    for (var i = 0; i < rowsInitialAmount; i++) {
+    for (var i = 0; i < rowsInitialAmount + 10; i++) {
       var row = document.createElement("TR");
       row.id = "row" + i;
       table.appendChild(row);
-      for (var j = 0; j < columnsInitialAmount; j++) {
+      for (var j = 0; j < columnsInitialAmount + 10; j++) {
         var cell = document.createElement("TD");
         cell.id = "cell_" + charArray[j] + i;
         row.appendChild(cell);
