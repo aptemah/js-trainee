@@ -36,7 +36,8 @@ table td input:focus {
 table input {
   display: block;
   border: none;
-  height: 20px;
+  height: 100%;
+  width: 100%;
   background: transparent;
 }
 input[type="radio"] {

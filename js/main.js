@@ -25,13 +25,25 @@ function tableInit(block, width, height, cellWidth, cellHeight){
       table.appendChild(row);
       for (var j = 0; j < columnsInitialAmount; j++) {
         var cell = document.createElement("TD");
-        cell.id = "cell" + charArray[j] + i;
+        cell.id = "cell_" + charArray[j] + i;
         row.appendChild(cell);
+        addClickEvent(cell);
       }
     }
+
+    function addClickEvent(cell){
+      cell.onclick = function(){
+        var input = document.createElement("INPUT");
+        input.id = "inputOf_" + this.id;
+        this.appendChild(input);
+        input.focus();
+        var that = this;
+        input.onblur = function(){
+          that.removeChild(this);
+        };
+      };
+    };
+
   })();
 
-
-  console.log(rowsInitialAmount);
-  console.log(columnsInitialAmount);
 };
