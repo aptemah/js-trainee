@@ -7,7 +7,7 @@ if (localStorage.getItem('sheets')) {
 
 (function tabGenerating(){
 
-  var tabsWrap = document.querySelectorAll("#tabs-wrap")[0];
+  var tabsWrap = document.querySelector("#tabs-wrap");
   var button = document.createElement("BUTTON");
   button.textContent = "+";
   button.addEventListener("click", function(e){
@@ -26,7 +26,6 @@ if (localStorage.getItem('sheets')) {
       var sheetIndex = parseInt(sheet)
       var name = sheetObject[sheet].settings.name;
       var current = sheetObject[sheet].settings.current;
-      console.dir(sheetObject[sheet].settings);
       tabCreate(sheetIndex, name, current);
     }
 
@@ -39,7 +38,7 @@ if (localStorage.getItem('sheets')) {
 
 function tabCreate(counter, name, ifCurrent, isNew) {
 
-  var lastInput = document.querySelectorAll("#tabs-wrap input:last-of-type")[0];
+  var lastInput = document.querySelector("#tabs-wrap input:last-of-type");
   if (counter == undefined) {
     if (lastInput != undefined) {
       var lastInputIndex = parseInt(lastInput.value);
@@ -50,7 +49,7 @@ function tabCreate(counter, name, ifCurrent, isNew) {
     name = "sheet" + counter;
   }
 
-  var tabsWrap = document.querySelectorAll("#tabs-wrap")[0];
+  var tabsWrap = document.querySelector("#tabs-wrap");
 
   var input = document.createElement("INPUT");
   input.id = "tab" + counter;
@@ -66,6 +65,7 @@ function tabCreate(counter, name, ifCurrent, isNew) {
   label.textContent = name;
 
   var deleteTab = document.createElement("DIV");
+  deleteTab.className = "del";
 
   tabsWrap.appendChild(input);
   tabsWrap.appendChild(label);
@@ -73,8 +73,58 @@ function tabCreate(counter, name, ifCurrent, isNew) {
 
   if (isNew == true) {
     sheetCreate(counter);
-    document.querySelectorAll("[name='tab'][value='" + counter + "']")[0].checked = true;
+    document.querySelector("[name='tab'][value='" + counter + "']").checked = true;
     fillCells();
+  }
+
+};
+
+
+function tabDelete(index, elements) {
+
+  //удаляем таб
+  var tabsWrap = document.querySelector("#tabs-wrap");
+  elements.forEach(function(item, i, arr){
+    tabsWrap.removeChild(item);
+  });
+
+  //удаляем объект листа и обновляем localStorage
+  deleteSheet(index);
+
+  //устанавливаем нужный таб и перерисовываем страницу
+  var sheetToRedirect = setReaddressSheet(index)
+
+  if (sheetToRedirect == undefined) {// если undefined — значит это был единственный лист, и нужно создать новый
+
+    tabCreate(0, "sheet0", true)
+    sheetCreate(0);
+    fillCells();
+
+  } else {
+
+    document.querySelector("#tabs-wrap #tab" + sheetToRedirect).checked = true;
+    fillCells();
+
+  }
+
+
+};
+
+
+function setReaddressSheet(index) {
+
+  //выясняем на какой таб будет переадресация после удаления
+  var previousElement;//кодовое число, будет использоваться в случае если это первый лист
+  for (var sheet in sheetObject) {
+      if (previousElement != undefined) {//если первый лист, проверяем не единственный ли это лист
+        if (sheet != index) {
+          return sheet;
+          break;
+        }
+        return previousElement;
+        break;
+      }
+    previousElement = sheet;
   }
 
 };
@@ -82,18 +132,22 @@ function tabCreate(counter, name, ifCurrent, isNew) {
 
 function tabSwitching() {
 
-  var tabsWrap = document.querySelectorAll("#tabs-wrap")[0];
+  var tabsWrap = document.querySelector("#tabs-wrap");
   tabsWrap.addEventListener("click", function(e){
     if (e.target.nodeName == "LABEL") {
+
       var clickedTabIndex = e.target.previousElementSibling.value;
       setCurrentSheet(clickedTabIndex);
       fillCells(clickedTabIndex);
+
     }
-    if (e.target.nodeName == "DIV") {
-      //var clickedButtonIndex = e.target.parentElement.previousElementSibling.value;
-      //deleteSheet(clickedButtonIndex);
-      //fillCells();
-      console.log("не готово")
+    console.dir(e.target);
+    if (e.target.className == "del") {
+
+      var tabToDelete = [e.target.parentElement, e.target.parentElement.previousElementSibling]
+      var clickedButtonIndex = parseInt(e.target.parentElement.previousElementSibling.value);
+      tabDelete(clickedButtonIndex, tabToDelete);
+
     }
   });
 };
@@ -102,7 +156,7 @@ function tabSwitching() {
 function fillCells(currentSheet) {
 
   if (currentSheet == undefined) {
-    var currentSheet = document.querySelectorAll("[name='tab']:checked")[0].value;
+    var currentSheet = document.querySelector("[name='tab']:checked").value;
   }
 
   var cells = document.querySelectorAll("td");
@@ -172,7 +226,7 @@ function tableInit(block, width, height, cellWidth, cellHeight){
 
         input.onblur = function(){
 
-          var currentSheet = document.querySelectorAll("[name='tab']:checked")[0].value;
+          var currentSheet = document.querySelector("[name='tab']:checked").value;
 
           if (!sheetObject[currentSheet].hasOwnProperty(rowIndex)) {
             sheetObject[currentSheet][rowIndex] = {};
@@ -210,8 +264,8 @@ function setCurrentSheet(index) {
 
 function deleteSheet(index) {
 
-  sheetObject[index] = null
-  localStorage.sheets = JSON.stringify(sheetObject);
+  delete sheetObject[index];
+  updateSheet();
 
 };
 
@@ -232,7 +286,7 @@ function sheetCreate(index) {
 };
 
 
-function updateSheet(index) {
+function updateSheet() {
 
   localStorage.sheets = JSON.stringify(sheetObject);
 

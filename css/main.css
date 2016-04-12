@@ -86,14 +86,15 @@ label {
 input[type="radio"]:checked + label {
   background-color: #D1D1D1;
 }
-label button {
+label div {
   display: none;
   position: absolute;
   top: 0;
   right: 0;
   width: 20px;
   height: 20px;
+  background-color: red;
 }
-label:hover button {
+label:hover div {
  display: inline-block; 
 }
