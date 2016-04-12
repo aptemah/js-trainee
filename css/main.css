@@ -4,7 +4,6 @@
   padding: 0;
   box-sizing: border-box;
   font-family: Arial, Helvetica, sans-serif;
-  font-weight: bold;
 }
 body {
   position: absolute;
@@ -45,14 +44,15 @@ table td {
   height: 20px;
   background-color: #fff;
   overflow: hidden;
+  font-size: 12px;
 }
-#super-table-grid tr td:first-child, #super-table-grid tr:first-child td {
+#super-table tr td:first-child, #super-table tr:first-child td {
   background-color: #D1D1D1;
 }
 table tr:first-child {
   text-align: center;
 }
-#super-table-grid tr td:first-child {
+#super-table tr td:first-child {
   width: 30px;
   text-align: center;
 }
@@ -71,6 +71,7 @@ table input {
   height: 100%;
   width: 100%;
   background: transparent;
+  font-size: 12px;
 }
 input[type="radio"] {
   height: 0;

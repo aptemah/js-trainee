@@ -1,5 +1,5 @@
-
 var sTable = {};
+
 
   if (localStorage.getItem('sheets')) {
     sTable.sheetObject = JSON.parse(localStorage.sheets);
@@ -7,11 +7,14 @@ var sTable = {};
     sTable.sheetObject = {};
   };
 
+
+  sTable.charArray = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"];
+
+
   sTable.init = function (block, width, height, cellWidth, cellHeight) {
 
-    sTable.tabGenerating()
+    sTable.tabGenerating();
 
-    var charArray = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"];
     var parentBlock = document.getElementById(block);
 
     var viewportWidth = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
@@ -32,7 +35,7 @@ var sTable = {};
       var tableFragment = document.createDocumentFragment();
       var table = document.createElement("TABLE");
       table.id = "super-table";
-      tableFragment.appendChild(table)
+      tableFragment.appendChild(table);
 
       for (var i = 0; i < rowsInitialAmount; i++) {
         var row = table.insertRow();
@@ -76,12 +79,32 @@ var sTable = {};
         }
       });
 
+      sTable.makeGrid(table);
+
     })();
 
   };
 
 
-  sTable.tabGenerating = function(){
+  sTable.makeGrid = function(table) {
+
+    var tableRows = Array.prototype.slice.call(table.rows);
+    var firstRowCells = Array.prototype.slice.call(tableRows[0].cells);
+
+    for (var cell in firstRowCells.slice(1)) {
+      var cellOffset = parseInt(cell) + 1;
+      firstRowCells[cellOffset].textContent = sTable.charArray[cell];
+    }
+
+    for (var row in tableRows.slice(1)) {
+      var rowOffset = parseInt(row) + 1;
+      tableRows[rowOffset].firstChild.textContent = row;
+    }
+    //console.dir(table.rows);
+  };
+
+
+  sTable.tabGenerating = function() {
 
     var tabsWrap = document.querySelector("#tabs-wrap");
     var button = document.createElement("BUTTON");
@@ -98,7 +121,7 @@ var sTable = {};
     } else { //если в sTable.sheetObject есть данные о листах, строим табы в соответствии с sTable.sheetObject
 
       for (var sheet in sTable.sheetObject) {
-        var sheetIndex = parseInt(sheet)
+        var sheetIndex = parseInt(sheet);
         var name = sTable.sheetObject[sheet].settings.name;
         var current = sTable.sheetObject[sheet].settings.current;
         sTable.tabCreate(sheetIndex, name, current);
@@ -168,11 +191,11 @@ var sTable = {};
     sTable.deleteSheet(index);
 
     //устанавливаем нужный таб и перерисовываем страницу
-    var sheetToRedirect = sTable.setReaddressSheet(index)
+    var sheetToRedirect = sTable.setReaddressSheet(index);
 
     if (sheetToRedirect == undefined) {// если undefined — значит это был единственный лист, и нужно создать новый
 
-      sTable.tabCreate(0, "sheet0", true)
+      sTable.tabCreate(0, "sheet0", true);
       sTable.sheetCreate(0);
       sTable.fillCells();
 
@@ -256,7 +279,7 @@ var sTable = {};
   sTable.setCurrentSheet = function(index) {
 
     for (var sheet in sTable.sheetObject) {
-      sTable.sheetObject[sheet].settings.current = false
+      sTable.sheetObject[sheet].settings.current = false;
     }
 
     sTable.sheetObject[index].settings.current = true;
