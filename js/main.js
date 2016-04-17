@@ -1,20 +1,20 @@
+ "use strict";
 // var editor = sTable.init();
+( () => {
 
-(function() {
-
-var sTable = {};
-window.ExcelTable = function() {
-  sTable.init('table-wrap');
-  return {
-    getValue: function() {
-      return 1;
+  var sTable = {};
+  window.ExcelTable = () => {
+    sTable.init('table-wrap');
+    return {
+      getValue: () => {
+        return 1;
+      }
     }
   }
-}
 
   sTable.charArray = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"];
 
-  sTable.init = function (block, width, height, cellWidth, cellHeight) {
+  sTable.init = (block, width, height, cellWidth, cellHeight) => {
 
     if (localStorage.getItem('sheets')) {
       sTable.sheetObject = JSON.parse(localStorage.sheets);
@@ -39,7 +39,7 @@ window.ExcelTable = function() {
     var columnsInitialAmount = Math.ceil(viewportWidth / cellWidth);
 
     //создание DOM таблицы
-    var creatingTableDom = (function() {
+    var creatingTableDom = (() => {
 
       var tableFragment = document.createDocumentFragment();
       var table = document.createElement("TABLE");
@@ -55,7 +55,7 @@ window.ExcelTable = function() {
       parentBlock.appendChild(table);
       sTable.fillCells();//Заполняем ячейки
       //Навешиваем события на клик и блур
-      table.addEventListener("click", function(e){
+      table.addEventListener("click", (e) => {
         if (e.target.tagName == "TD") {
 
           var rowIndex = e.target.parentElement.rowIndex;
@@ -68,7 +68,7 @@ window.ExcelTable = function() {
           targetCell.appendChild(input);
           input.focus();
 
-          input.onblur = function(){
+          input.onblur = () => {
 
             var currentSheet = document.querySelector("[name='tab']:checked").value;
 
@@ -95,7 +95,7 @@ window.ExcelTable = function() {
   };
 
 
-  sTable.makeGrid = function(table) {
+  sTable.makeGrid = (table) => {
 
     var tableRows = Array.prototype.slice.call(table.rows);
     var firstRowCells = Array.prototype.slice.call(tableRows[0].cells);
@@ -113,12 +113,12 @@ window.ExcelTable = function() {
   };
 
 
-  sTable.tabGenerating = function() {
+  sTable.tabGenerating = () => {
 
     var tabsWrap = document.querySelector("#tabs-wrap");
     var button = document.createElement("BUTTON");
     button.textContent = "+";
-    button.addEventListener("click", function(e){
+    button.addEventListener("click", (e) => {
       sTable.tabCreate(undefined, undefined, undefined, true);
     });
     tabsWrap.appendChild(button);
@@ -147,7 +147,7 @@ window.ExcelTable = function() {
   };
 
 
-  sTable.tabCreate = function(counter, name, ifCurrent, isNew) {
+  sTable.tabCreate = (counter, name, ifCurrent, isNew) => {
 
     var lastInput = document.querySelector("#tabs-wrap input:last-of-type");
     if (counter == undefined) {
@@ -192,11 +192,11 @@ window.ExcelTable = function() {
   };
 
 
-  sTable.tabDelete = function(index, elements) {
+  sTable.tabDelete = (index, elements) => {
 
     //удаляем таб
     var tabsWrap = document.querySelector("#tabs-wrap");
-    elements.forEach(function(item, i, arr){
+    elements.forEach((item, i, arr) => {
       tabsWrap.removeChild(item);
     });
 
@@ -223,7 +223,7 @@ window.ExcelTable = function() {
   };
 
 
-  sTable.setReaddressSheet = function(index) {
+  sTable.setReaddressSheet = (index) => {
 
     //выясняем на какой таб будет переадресация после удаления
     var previousElement;//кодовое число, будет использоваться в случае если это первый лист
@@ -242,10 +242,10 @@ window.ExcelTable = function() {
   };
 
 
-  sTable.tabSwitching = function() {
+  sTable.tabSwitching = () => {
 
     var tabsWrap = document.querySelector("#tabs-wrap");
-    tabsWrap.addEventListener("click", function(e){
+    tabsWrap.addEventListener("click", (e) =>{
       if (e.target.nodeName == "LABEL") {
 
         var clickedTabIndex = e.target.previousElementSibling.value;
@@ -266,7 +266,7 @@ window.ExcelTable = function() {
   };
 
 
-  sTable.fillCells = function(currentSheet) {
+  sTable.fillCells = (currentSheet) => {
 
     if (currentSheet == undefined) {
       var currentSheet = document.querySelector("[name='tab']:checked").value;
@@ -289,7 +289,7 @@ window.ExcelTable = function() {
   };
 
 
-  sTable.setCurrentSheet = function(index) {
+  sTable.setCurrentSheet = (index) => {
 
     for (var sheet in sTable.sheetObject) {
       sTable.sheetObject[sheet].settings.current = false;
@@ -302,7 +302,7 @@ window.ExcelTable = function() {
   };
 
 
-  sTable.deleteSheet = function(index) {
+  sTable.deleteSheet = (index) => {
 
     delete sTable.sheetObject[index];
     sTable.updateSheet();
@@ -310,7 +310,7 @@ window.ExcelTable = function() {
   };
 
 
-  sTable.sheetCreate = function(index) {
+  sTable.sheetCreate = (index) => {
 
     sTable.sheetObject[index] = 
     {
@@ -326,12 +326,12 @@ window.ExcelTable = function() {
   };
 
 
-  sTable.updateSheet = function() {
+  sTable.updateSheet = () => {
 
     localStorage.sheets = JSON.stringify(sTable.sheetObject);
 
   };
 
-//sTable.init("table-wrap");
+sTable.init("table-wrap");
 })()
 
