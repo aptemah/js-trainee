@@ -1,17 +1,26 @@
+// var editor = sTable.init();
+
+(function() {
+
 var sTable = {};
-
-
-  if (localStorage.getItem('sheets')) {
-    sTable.sheetObject = JSON.parse(localStorage.sheets);
-  } else {
-    sTable.sheetObject = {};
-  };
-
+window.ExcelTable = function() {
+  sTable.init('table-wrap');
+  return {
+    getValue: function() {
+      return 1;
+    }
+  }
+}
 
   sTable.charArray = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"];
 
-
   sTable.init = function (block, width, height, cellWidth, cellHeight) {
+
+    if (localStorage.getItem('sheets')) {
+      sTable.sheetObject = JSON.parse(localStorage.sheets);
+    } else {
+      sTable.sheetObject = {};
+    };
 
     sTable.tabGenerating();
 
@@ -121,6 +130,10 @@ var sTable = {};
     } else { //если в sTable.sheetObject есть данные о листах, строим табы в соответствии с sTable.sheetObject
 
       for (var sheet in sTable.sheetObject) {
+        if (!sTable.sheetObject.hasOwnProperty(sheet)) {
+          continue;
+        }
+
         var sheetIndex = parseInt(sheet);
         var name = sTable.sheetObject[sheet].settings.name;
         var current = sTable.sheetObject[sheet].settings.current;
@@ -319,4 +332,6 @@ var sTable = {};
 
   };
 
-document.addEventListener("DOMContentLoaded", sTable.init("table-wrap"));
+//sTable.init("table-wrap");
+})()
+
