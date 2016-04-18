@@ -1,20 +1,11 @@
  "use strict";
-// var editor = sTable.init();
-( () => {
+
+function MyExcelAPI() {
 
   var sTable = {};
-  window.ExcelTable = () => {
-    sTable.init('table-wrap');
-    return {
-      getValue: () => {
-        return 1;
-      }
-    }
-  }
-
   sTable.charArray = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"];
 
-  sTable.init = (block, width, height, cellWidth, cellHeight) => {
+  this.init = (block, width, height, cellWidth, cellHeight) => {
 
     if (localStorage.getItem('sheets')) {
       sTable.sheetObject = JSON.parse(localStorage.sheets);
@@ -332,6 +323,8 @@
 
   };
 
-sTable.init("table-wrap");
-})()
 
+}
+
+var newTable = new MyExcelAPI;
+newTable.init("table-wrap");
