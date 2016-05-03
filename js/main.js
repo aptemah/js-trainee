@@ -1,21 +1,90 @@
  "use strict";
 
-function MyExcelAPI() {
+function MyExcel() {
 
+  //private
+
+  var self = this;
   var sTable = {};
-  sTable.charArray = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"];
+  var tableName , parentBlock, table, tabsBlock;
+
+  var charArray = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"];
+  
+  var indexToChar = (index) => {
+
+    var word = "", result;
+
+    var oneMoreTime = (lastResult) => {
+
+      if (lastResult == undefined) {lastResult = index}
+      result = Math.floor(lastResult / 26);
+      if (result > 26) {
+        var middleIndex = result % 26;
+        word = word + charArray[middleIndex - 1];
+        oneMoreTime(result)
+      } else {
+        word = charArray[result - 1] + word;
+        if (result > 26) { oneMoreTime(result) } else { theLastChar(index % 26) };
+      }
+
+    }
+
+    var theLastChar = (result) => {
+
+      if (result == undefined) {result = index} 
+      word = word + charArray[result];
+    }
+
+    if (index < 26) {theLastChar()} else {oneMoreTime()}
+ 
+    return word;
+  };
+
+  var charToIndex = (char) => {
+    var index = 0, rank = 0, resultArray = [];
+    var strArray = char.split("");
+    strArray.forEach( (currentChar) => {
+      charArray.forEach( (item, i) => {
+        if (item == currentChar) {
+
+          resultArray.push(i);
+        }
+      });
+    } );
+    console.log(resultArray);
+    resultArray.forEach( (item, i, arr) => {
+      var add = item;
+      for (var j = 0; j < arr.length - i - 1; j++) {
+        if (j == 0) {add++}
+        add = 26 * add
+        console.log(add)
+      }
+      console.dir(add)
+      index = index + add;
+    });
+    console.dir(index)
+
+    return index;
+  };
+
+  //public
 
   this.init = (block, width, height, cellWidth, cellHeight) => {
 
-    if (localStorage.getItem('sheets')) {
-      sTable.sheetObject = JSON.parse(localStorage.sheets);
+    tableName = block;//определяем имя таблицы. Объект в Local Storage будет называться так же
+    parentBlock = document.getElementById(block);
+
+    if (localStorage.getItem(tableName)) {
+      sTable.sheetObject = JSON.parse(localStorage[tableName]);
     } else {
       sTable.sheetObject = {};
     };
 
+    tabsBlock = document.createElement("DIV");
+    tabsBlock.className = "tabs-wrap";
+    parentBlock.parentNode.insertBefore(tabsBlock, parentBlock.nextSibling);
     sTable.tabGenerating();
 
-    var parentBlock = document.getElementById(block);
 
     var viewportWidth = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
     var viewportHeight = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
@@ -33,8 +102,8 @@ function MyExcelAPI() {
     var creatingTableDom = (() => {
 
       var tableFragment = document.createDocumentFragment();
-      var table = document.createElement("TABLE");
-      table.id = "super-table";
+      table = document.createElement("TABLE");
+      table.className = "super-table";
       tableFragment.appendChild(table);
 
       for (var i = 0; i < rowsInitialAmount; i++) {
@@ -45,23 +114,39 @@ function MyExcelAPI() {
       }
       parentBlock.appendChild(table);
       sTable.fillCells();//Заполняем ячейки
-      //Навешиваем события на клик и блур
-      table.addEventListener("click", (e) => {
-        if (e.target.tagName == "TD") {
+      this.cellSelect();
+    })();
 
-          var rowIndex = e.target.parentElement.rowIndex;
-          var cellIndex = e.target.cellIndex;
-          var targetCell = table.tBodies[0].rows[rowIndex].cells[cellIndex];
-          var input = document.createElement("INPUT");
+  };
 
-          input.value = targetCell.textContent;
-          targetCell.textContent = null;
-          targetCell.appendChild(input);
-          input.focus();
+  this.cellSelect = () => {
+    table.addEventListener("click", (e) => {
+      if (e.target.tagName == "TD") {
+
+        var rowIndex = e.target.parentElement.rowIndex;
+        var cellIndex = e.target.cellIndex;
+        var targetCell = table.tBodies[0].rows[rowIndex].cells[cellIndex];
+        var input = document.createElement("INPUT");
+
+        self.selectedCell = indexToChar(cellIndex - 1) + (rowIndex - 1);
+        if (rowIndex != 0 && cellIndex != 0) {//если клик не по первым рядам...
+
+          targetCell.className += "hover";
+
+          var inputCreating = (e) => {
+            console.log("inputCreating")
+            input.value = targetCell.textContent;
+            targetCell.textContent = null;
+            targetCell.appendChild(input);
+            input.focus();
+            window.removeEventListener("keydown", inputCreating);
+          }
+
+          window.addEventListener("keydown", inputCreating);
 
           input.onblur = () => {
 
-            var currentSheet = document.querySelector("[name='tab']:checked").value;
+            var currentSheet = tabsBlock.querySelector(":checked").value;
 
             if (!sTable.sheetObject[currentSheet].hasOwnProperty(rowIndex)) {
               sTable.sheetObject[currentSheet][rowIndex] = {};
@@ -74,26 +159,26 @@ function MyExcelAPI() {
             input.parentElement.textContent = input.value;
             input.remove();
             input = null;
+            targetCell.className = targetCell.className.replace(/\bhover\b/,'');
 
           };
         }
-      });
+      }
+    });
+  }
 
-      sTable.makeGrid(table);
+  this.getCoords = () => {
 
-    })();
+  }
 
-  };
-
-
-  sTable.makeGrid = (table) => {
+  this.makeGrid = (table) => {
 
     var tableRows = Array.prototype.slice.call(table.rows);
     var firstRowCells = Array.prototype.slice.call(tableRows[0].cells);
 
     for (var cell in firstRowCells.slice(1)) {
       var cellOffset = parseInt(cell) + 1;
-      firstRowCells[cellOffset].textContent = sTable.charArray[cell];
+      firstRowCells[cellOffset].textContent = charArray[cell];
     }
 
     for (var row in tableRows.slice(1)) {
@@ -106,7 +191,7 @@ function MyExcelAPI() {
 
   sTable.tabGenerating = () => {
 
-    var tabsWrap = document.querySelector("#tabs-wrap");
+    var tabsWrap = tabsBlock;
     var button = document.createElement("BUTTON");
     button.textContent = "+";
     button.addEventListener("click", (e) => {
@@ -140,7 +225,7 @@ function MyExcelAPI() {
 
   sTable.tabCreate = (counter, name, ifCurrent, isNew) => {
 
-    var lastInput = document.querySelector("#tabs-wrap input:last-of-type");
+    var lastInput = tabsBlock.querySelector("input:last-of-type");
     if (counter == undefined) {
       if (lastInput != undefined) {
         var lastInputIndex = parseInt(lastInput.value);
@@ -151,19 +236,19 @@ function MyExcelAPI() {
       name = "sheet" + counter;
     }
 
-    var tabsWrap = document.querySelector("#tabs-wrap");
+    var tabsWrap = tabsBlock;
 
     var input = document.createElement("INPUT");
-    input.id = "tab" + counter;
+    input.id = tableName + "tab" + counter;
     input.type = "radio";
-    input.name = "tab";
+    input.name = tableName + "tab";
     input.value = counter;
     if (ifCurrent == true) {//установка активного таба
       input.checked = true;
     };
 
     var label = document.createElement("LABEL");
-    label.setAttribute("for", "tab" + counter);
+    label.setAttribute("for", tableName + "tab" + counter);
     label.textContent = name;
 
     var deleteTab = document.createElement("DIV");
@@ -176,7 +261,7 @@ function MyExcelAPI() {
 
     if (isNew == true) {
       sTable.sheetCreate(counter);
-      document.querySelector("[name='tab'][value='" + counter + "']").checked = true;
+      tabsBlock.querySelector("[type='radio'][value='" + counter + "']").checked = true;
       sTable.fillCells();
     }
 
@@ -186,7 +271,7 @@ function MyExcelAPI() {
   sTable.tabDelete = (index, elements) => {
 
     //удаляем таб
-    var tabsWrap = document.querySelector("#tabs-wrap");
+    var tabsWrap = tabsBlock;
     elements.forEach((item, i, arr) => {
       tabsWrap.removeChild(item);
     });
@@ -205,7 +290,7 @@ function MyExcelAPI() {
 
     } else {
 
-      document.querySelector("#tabs-wrap #tab" + sheetToRedirect).checked = true;
+      tabsBlock.querySelector("#tab" + sheetToRedirect).checked = true;
       sTable.fillCells();
       sTable.setCurrentSheet(sheetToRedirect);
 
@@ -235,7 +320,7 @@ function MyExcelAPI() {
 
   sTable.tabSwitching = () => {
 
-    var tabsWrap = document.querySelector("#tabs-wrap");
+    var tabsWrap = tabsBlock;
     tabsWrap.addEventListener("click", (e) =>{
       if (e.target.nodeName == "LABEL") {
 
@@ -244,10 +329,9 @@ function MyExcelAPI() {
         sTable.fillCells(clickedTabIndex);
 
       }
-      console.dir(e.target);
       if (e.target.className == "del") {
 
-        var tabToDelete = [e.target.parentElement, e.target.parentElement.previousElementSibling]
+        var tabToDelete = [e.target.parentElement, e.target.parentElement.previousElementSibling];
         var clickedButtonIndex = parseInt(e.target.parentElement.previousElementSibling.value);
         sTable.tabDelete(clickedButtonIndex, tabToDelete);
 
@@ -258,17 +342,15 @@ function MyExcelAPI() {
 
 
   sTable.fillCells = (currentSheet) => {
-
     if (currentSheet == undefined) {
-      var currentSheet = document.querySelector("[name='tab']:checked").value;
+      var currentSheet = tabsBlock.querySelector(":checked").value;
     }
 
-    var cells = document.querySelectorAll("td");
+    var cells = table.querySelectorAll("td");
     cells = Array.prototype.slice.call(cells);
     for (var cell in cells) {
       cells[cell].textContent = null;
     }
-    var table = document.getElementById("super-table");
 
     for (var row in sTable.sheetObject[currentSheet]) {
       if (row != "settings") {
@@ -277,6 +359,7 @@ function MyExcelAPI() {
         }
       }
     }
+    self.makeGrid(table);
   };
 
 
@@ -288,7 +371,7 @@ function MyExcelAPI() {
 
     sTable.sheetObject[index].settings.current = true;
 
-    localStorage.sheets = JSON.stringify(sTable.sheetObject);
+    localStorage[tableName] = JSON.stringify(sTable.sheetObject);
 
   };
 
@@ -312,19 +395,16 @@ function MyExcelAPI() {
       }
     };
     sTable.setCurrentSheet(index);
-    localStorage.sheets = JSON.stringify(sTable.sheetObject);
+    localStorage[tableName] = JSON.stringify(sTable.sheetObject);
 
   };
 
 
   sTable.updateSheet = () => {
 
-    localStorage.sheets = JSON.stringify(sTable.sheetObject);
+    localStorage[tableName] = JSON.stringify(sTable.sheetObject);
 
   };
 
 
 }
-
-var newTable = new MyExcelAPI;
-newTable.init("table-wrap");

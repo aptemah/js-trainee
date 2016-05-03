@@ -5,12 +5,18 @@
     <meta charset="utf-8">
     <title>My google docs with black Jack and scripts</title>
     <link href="css/main.css" rel="stylesheet">
-    <script type="text/javascript" src="js/main.js" defer></script>
+    <script type="text/javascript" src="js/main.js"></script>
 </head>
 <body>
   <div id="table-wrap"></div>
-  <div id="tabs-wrap">
+  <div id="table-wrap2"></div>
+  <script type="text/javascript">
+  	
+    var newTable = new MyExcel;
+    newTable.init("table-wrap");
 
-  </div>
+    var newTable2 = new MyExcel;
+    newTable2.init("table-wrap2");
+  </script>
 </body>
 </html>
