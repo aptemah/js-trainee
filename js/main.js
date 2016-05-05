@@ -6,7 +6,10 @@ function MyExcel() {
 
   var self = this;
   var sTable = {};
-  var tableName , parentBlock, table, tabsBlock;
+  var tableName, parentBlock, table, tabsBlock;
+
+  var viewportWidth = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
+  var viewportHeight = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
 
   var charArray = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"];
   
@@ -51,19 +54,14 @@ function MyExcel() {
         }
       });
     } );
-    console.log(resultArray);
     resultArray.forEach( (item, i, arr) => {
       var add = item;
       for (var j = 0; j < arr.length - i - 1; j++) {
         if (j == 0) {add++}
         add = 26 * add
-        console.log(add)
       }
-      console.dir(add)
       index = index + add;
     });
-    console.dir(index)
-
     return index;
   };
 
@@ -85,38 +83,94 @@ function MyExcel() {
     parentBlock.parentNode.insertBefore(tabsBlock, parentBlock.nextSibling);
     sTable.tabGenerating();
 
-
-    var viewportWidth = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
-    var viewportHeight = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
-
     var heightOfTable = viewportHeight - parseInt(window.getComputedStyle(parentBlock).getPropertyValue('margin-top'));
     if (width == undefined)  {parentBlock.style.width  = (viewportWidth + "px");}
     if (height == undefined) {parentBlock.style.height = (heightOfTable + "px");}
-    if (cellWidth == undefined) {cellWidth = 80;}
-    if (cellHeight == undefined) {cellHeight = 20;}
+    if (cellWidth == undefined) {self.cellWidth = 80;}
+    if (cellHeight == undefined) {self.cellHeight = 20;}
 
-    var rowsInitialAmount = Math.ceil(viewportHeight / cellHeight);
-    var columnsInitialAmount = Math.ceil(viewportWidth / cellWidth);
+    self.creatingTableDom();
+    (function (){
+/*      parentBlock.addEventListener("scroll", function(){
+
+        if (parentBlock.scrollTop == parentBlock.scrollHeight - parentBlock.clientHeight) {
+
+          var cellsQuantity = table.rows[0].children.length;
+
+          for (var i = 0; i < 5; i++) {
+            var row = table.insertRow();
+            for (var j = 0; j < cellsQuantity; j++) {
+              row.insertCell();
+            }
+          }
+
+          self.makeGrid();
+
+        }
+
+        if (parentBlock.scrollLeft == parentBlock.scrollWidth - parentBlock.clientWidth) {
+
+          for (var x in table.rows) {
+            if (!table.rows.hasOwnProperty(x)) continue;
+            for (var i = 0; i < 5; i++) {
+              table.rows[x].insertCell();
+            }
+          }
+
+          self.makeGrid();
+
+        }
+
+      });*/
+    })();
+  };
 
     //создание DOM таблицы
-    var creatingTableDom = (() => {
+  this.creatingTableDom = (currentSheet) => {
 
-      var tableFragment = document.createDocumentFragment();
-      table = document.createElement("TABLE");
-      table.className = "super-table";
-      tableFragment.appendChild(table);
+    if (currentSheet == undefined) {
+      var currentSheet = tabsBlock.querySelector(":checked").value;
+    }
 
-      for (var i = 0; i < rowsInitialAmount; i++) {
-        var row = table.insertRow();
-        for (var j = 0; j < columnsInitialAmount; j++) {
-          row.insertCell();
-        }
+    var maxRowNumber  = 0;
+    var maxCellNumber = 0;
+
+    for (var row in sTable.sheetObject[currentSheet]) {
+
+      var currentRowNumber = parseInt( row );
+      if ( currentRowNumber > maxRowNumber ) { maxRowNumber = currentRowNumber };
+
+      for ( var cell in sTable.sheetObject[currentSheet][row]) {
+
+        var currentCellNumber = parseInt( cell );
+        if ( currentCellNumber > maxCellNumber ) { maxCellNumber = currentCellNumber };
+
       }
-      parentBlock.appendChild(table);
-      sTable.fillCells();//Заполняем ячейки
-      this.cellSelect();
-    })();
 
+    }
+
+    if (table) {parentBlock.removeChild(table);}
+
+    var rowsInitialAmount = Math.ceil(viewportHeight / self.cellHeight);
+    var columnsInitialAmount = Math.ceil(viewportWidth / self.cellWidth);
+
+    if (rowsInitialAmount < maxRowNumber) {rowsInitialAmount = maxRowNumber + 1};
+    if (columnsInitialAmount < maxCellNumber) {columnsInitialAmount = maxCellNumber + 1};
+
+    var tableFragment = document.createDocumentFragment();
+    table = document.createElement("TABLE");
+    table.className = "super-table";
+    tableFragment.appendChild(table);
+
+    for (var i = 0; i < rowsInitialAmount; i++) {
+      var row = table.insertRow();
+      for (var j = 0; j < columnsInitialAmount; j++) {
+        row.insertCell();
+      }
+    }
+    parentBlock.appendChild(table);
+    sTable.fillCells(currentSheet);//Заполняем ячейки
+    this.cellSelect();
   };
 
   this.cellSelect = () => {
@@ -134,7 +188,6 @@ function MyExcel() {
           targetCell.className += "hover";
 
           var inputCreating = (e) => {
-            console.log("inputCreating")
             input.value = targetCell.textContent;
             targetCell.textContent = null;
             targetCell.appendChild(input);
@@ -143,6 +196,13 @@ function MyExcel() {
           }
 
           window.addEventListener("keydown", inputCreating);
+
+          table.addEventListener("click", deleteHoverClass);
+
+          function deleteHoverClass(){
+            targetCell.className = targetCell.className.replace(/\bhover\b/,'');
+            table.removeEventListener("click", deleteHoverClass);
+          }
 
           input.onblur = () => {
 
@@ -159,7 +219,7 @@ function MyExcel() {
             input.parentElement.textContent = input.value;
             input.remove();
             input = null;
-            targetCell.className = targetCell.className.replace(/\bhover\b/,'');
+
 
           };
         }
@@ -171,21 +231,20 @@ function MyExcel() {
 
   }
 
-  this.makeGrid = (table) => {
+  this.makeGrid = () => {
 
     var tableRows = Array.prototype.slice.call(table.rows);
     var firstRowCells = Array.prototype.slice.call(tableRows[0].cells);
 
     for (var cell in firstRowCells.slice(1)) {
       var cellOffset = parseInt(cell) + 1;
-      firstRowCells[cellOffset].textContent = charArray[cell];
+      firstRowCells[cellOffset].textContent = indexToChar(cell);
     }
 
     for (var row in tableRows.slice(1)) {
       var rowOffset = parseInt(row) + 1;
       tableRows[rowOffset].firstChild.textContent = row;
     }
-    //console.dir(table.rows);
   };
 
 
@@ -262,7 +321,7 @@ function MyExcel() {
     if (isNew == true) {
       sTable.sheetCreate(counter);
       tabsBlock.querySelector("[type='radio'][value='" + counter + "']").checked = true;
-      sTable.fillCells();
+      self.creatingTableDom();
     }
 
   };
@@ -286,12 +345,12 @@ function MyExcel() {
 
       sTable.tabCreate(0, "sheet0", true);
       sTable.sheetCreate(0);
-      sTable.fillCells();
+      self.creatingTableDom();
 
     } else {
 
-      tabsBlock.querySelector("#tab" + sheetToRedirect).checked = true;
-      sTable.fillCells();
+      tabsBlock.querySelector("#" + tableName + "tab" + sheetToRedirect).checked = true;
+      self.creatingTableDom();
       sTable.setCurrentSheet(sheetToRedirect);
 
     }
@@ -326,7 +385,7 @@ function MyExcel() {
 
         var clickedTabIndex = e.target.previousElementSibling.value;
         sTable.setCurrentSheet(clickedTabIndex);
-        sTable.fillCells(clickedTabIndex);
+        self.creatingTableDom(clickedTabIndex);
 
       }
       if (e.target.className == "del") {
