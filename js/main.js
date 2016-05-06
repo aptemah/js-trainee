@@ -91,7 +91,7 @@ function MyExcel() {
 
     self.creatingTableDom();
     (function (){
-/*      parentBlock.addEventListener("scroll", function(){
+      parentBlock.addEventListener("scroll", function(){
 
         if (parentBlock.scrollTop == parentBlock.scrollHeight - parentBlock.clientHeight) {
 
@@ -121,7 +121,7 @@ function MyExcel() {
 
         }
 
-      });*/
+      });
     })();
   };
 
@@ -465,5 +465,12 @@ function MyExcel() {
 
   };
 
+
+}
+MyExcel.prototype.cellParse = function(string){
+
+  if (string.search(/^=/) != "-1") {
+    //.match(/\d{1,}|\+|\w{1,}\d{1,}/g)
+  }
 
 }
