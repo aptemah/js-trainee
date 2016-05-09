@@ -6,14 +6,14 @@ function MyExcel() {
 
   var self = this;
   var sTable = {};
-  var tableName, parentBlock, table, tabsBlock;
+  var tableName, parentBlock, table, tabsBlock, gridTableElementRows, gridTableElementColumns;
 
   var viewportWidth = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
   var viewportHeight = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
 
   var charArray = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"];
   
-  var indexToChar = (index) => {
+  this.indexToChar = (index) => {
 
     var word = "", result;
 
@@ -43,17 +43,16 @@ function MyExcel() {
     return word;
   };
 
-  var charToIndex = (char) => {
+  this.charToIndex = function (char) {
+
     var index = 0, rank = 0, resultArray = [];
     var strArray = char.split("");
-    strArray.forEach( (currentChar) => {
-      charArray.forEach( (item, i) => {
-        if (item == currentChar) {
 
-          resultArray.push(i);
-        }
-      });
-    } );
+    strArray.forEach( (currentChar) => {
+      var indexOfCurrentChar = charArray.indexOf(currentChar.toUpperCase());
+      resultArray.push(indexOfCurrentChar);
+    });
+
     resultArray.forEach( (item, i, arr) => {
       var add = item;
       for (var j = 0; j < arr.length - i - 1; j++) {
@@ -63,6 +62,7 @@ function MyExcel() {
       index = index + add;
     });
     return index;
+
   };
 
   //public
@@ -99,25 +99,34 @@ function MyExcel() {
 
           for (var i = 0; i < 5; i++) {
             var row = table.insertRow();
+            //добавления в таблицу разметки
+            var rowGrid = gridTableElementRows.insertRow();
+            rowGrid.insertCell();
+            gridTableElementRows.rows[row.rowIndex].cells[0].textContent = row.rowIndex + 1;
+
             for (var j = 0; j < cellsQuantity; j++) {
               row.insertCell();
             }
           }
 
-          self.makeGrid();
-
         }
 
         if (parentBlock.scrollLeft == parentBlock.scrollWidth - parentBlock.clientWidth) {
 
+          var numberOfAddingColumns = 5;
+          //добавления в таблицу разметки
+          for (var i = 0; i < numberOfAddingColumns; i++) {
+            var cell = gridTableElementColumns.rows[0].insertCell();
+            var cellIndex = parseInt(cell.cellIndex);
+            gridTableElementColumns.rows[0].cells[cellIndex].textContent = self.indexToChar(cellIndex);
+          }
+          //добавления в основную таблицу
           for (var x in table.rows) {
             if (!table.rows.hasOwnProperty(x)) continue;
-            for (var i = 0; i < 5; i++) {
-              table.rows[x].insertCell();
+            for (var i = 0; i < numberOfAddingColumns; i++) {
+              var cell = table.rows[x].insertCell();
             }
           }
-
-          self.makeGrid();
 
         }
 
@@ -169,6 +178,7 @@ function MyExcel() {
       }
     }
     parentBlock.appendChild(table);
+
     sTable.fillCells(currentSheet);//Заполняем ячейки
     this.cellSelect();
   };
@@ -182,47 +192,46 @@ function MyExcel() {
         var targetCell = table.tBodies[0].rows[rowIndex].cells[cellIndex];
         var input = document.createElement("INPUT");
 
-        self.selectedCell = indexToChar(cellIndex - 1) + (rowIndex - 1);
-        if (rowIndex != 0 && cellIndex != 0) {//если клик не по первым рядам...
+        self.selectedCell = self.indexToChar(cellIndex - 1) + (rowIndex - 1);
 
-          targetCell.className += "hover";
+        targetCell.className += "hover";
 
-          var inputCreating = (e) => {
-            input.value = targetCell.textContent;
-            targetCell.textContent = null;
-            targetCell.appendChild(input);
-            input.focus();
-            window.removeEventListener("keydown", inputCreating);
-          }
-
-          window.addEventListener("keydown", inputCreating);
-
-          table.addEventListener("click", deleteHoverClass);
-
-          function deleteHoverClass(){
-            targetCell.className = targetCell.className.replace(/\bhover\b/,'');
-            table.removeEventListener("click", deleteHoverClass);
-          }
-
-          input.onblur = () => {
-
-            var currentSheet = tabsBlock.querySelector(":checked").value;
-
-            if (!sTable.sheetObject[currentSheet].hasOwnProperty(rowIndex)) {
-              sTable.sheetObject[currentSheet][rowIndex] = {};
-            }
-
-            sTable.sheetObject[currentSheet][rowIndex][cellIndex] = input.value;
-
-            sTable.updateSheet();
-
-            input.parentElement.textContent = input.value;
-            input.remove();
-            input = null;
-
-
-          };
+        var inputCreating = (e) => {
+          input.value = targetCell.textContent;
+          targetCell.textContent = null;
+          targetCell.appendChild(input);
+          input.focus();
+          window.removeEventListener("keydown", inputCreating);
         }
+
+        window.addEventListener("keydown", inputCreating);
+
+        table.addEventListener("click", deleteHoverClass);
+
+        function deleteHoverClass(){
+          targetCell.className = targetCell.className.replace(/\bhover\b/,'');
+          table.removeEventListener("click", deleteHoverClass);
+        }
+
+        input.onblur = () => {
+
+          var currentSheet = tabsBlock.querySelector(":checked").value;
+
+          if (!sTable.sheetObject[currentSheet].hasOwnProperty(rowIndex)) {
+            sTable.sheetObject[currentSheet][rowIndex] = {};
+          }
+
+          sTable.sheetObject[currentSheet][rowIndex][cellIndex] = input.value;
+
+          sTable.updateSheet();
+
+          input.parentElement.textContent = input.value;
+          input.remove();
+          input = null;
+
+
+        };
+
       }
     });
   }
@@ -233,18 +242,56 @@ function MyExcel() {
 
   this.makeGrid = () => {
 
+    var self = this;
+
+    this.addNewRow = (numberOfRow) => {
+
+      gridTableElementRows.rows[numberOfRow].cells[0].textContent = numberOfRow + 1;
+
+    }
+
+    this.addNewColumn = (numberOfColumn) => {
+
+      gridTableElementColumns.rows[0].cells[numberOfColumn].textContent = self.indexToChar(numberOfColumn);
+
+    }
+
     var tableRows = Array.prototype.slice.call(table.rows);
     var firstRowCells = Array.prototype.slice.call(tableRows[0].cells);
 
-    for (var cell in firstRowCells.slice(1)) {
-      var cellOffset = parseInt(cell) + 1;
-      firstRowCells[cellOffset].textContent = indexToChar(cell);
+    //таблица для строк
+    gridTableElementRows = document.createElement("TABLE");
+    gridTableElementRows.className = "super-table-rows";
+    parentBlock.appendChild(gridTableElementRows);
+
+    for (var i = 0; i < tableRows.length; i++) {
+      var row = gridTableElementRows.insertRow();
+      row.insertCell();
+      this.addNewRow(i);
     }
 
-    for (var row in tableRows.slice(1)) {
-      var rowOffset = parseInt(row) + 1;
-      tableRows[rowOffset].firstChild.textContent = row;
+    //таблица для столбцов
+    gridTableElementColumns = document.createElement("TABLE");
+    gridTableElementColumns.className = "super-table-columns";
+    parentBlock.appendChild(gridTableElementColumns);
+
+    var row = gridTableElementColumns.insertRow();
+
+    for (var i = 0; i < firstRowCells.length; i++) {
+      row.insertCell();
+      this.addNewColumn(i);
     }
+
+    (function (){
+      parentBlock.addEventListener("scroll", function(){
+
+        gridTableElementRows.style.left = parentBlock.scrollLeft + "px";
+
+        gridTableElementColumns.style.top = parentBlock.scrollTop + "px";
+
+      });
+    })();
+
   };
 
 
@@ -465,12 +512,41 @@ function MyExcel() {
 
   };
 
+  this.cellParse = function(indexOfCell) {
 
-}
-MyExcel.prototype.cellParse = function(string){
+    var self = this;
+    console.log(indexOfCell.match(/\w{1,}/)[0])
+    var cellIndex = this.charToIndex( indexOfCell.match(/[a-z]{1,}/i)[0] );
+    var rowIndex = indexOfCell.match(/\d{1,}/)[0];
 
-  if (string.search(/^=/) != "-1") {
-    //.match(/\d{1,}|\+|\w{1,}\d{1,}/g)
+    var needlyCell = table.rows[rowIndex].cells[cellIndex].textContent;
+    console.dir(needlyCell);
+
+    if (string.search(/^=/) != "-1") {
+      var result = 0;
+      var lastOperand = "";
+      var mathArray = string.match(/\d{1,}|\+|\-|\*|\/|\^|sqrt|\w{1,}\d{1,}/g);
+      mathArray.forEach(function(item){
+
+        if (item.match(/\+|\-|\*|\/|\^/) != "-1") {//если ссылка
+          lastOperand = item;
+        }
+
+        if (item.match(/\d{1,}/) != "-1") {//если число
+          self.doOperation(parseInt(item))
+        }
+
+        if (item.match(/\w{1,}\d{1,}/) != "-1") {//если ссылка
+
+        }
+
+      });
+    }
+
+    this.doOperation = (number) => {
+      if (lastOperand == undefined) {lastOperand = "+"}//возникает только в случае первого запуска, или ошибочного ввода.
+      //result = result eval(lastOperand) number;
+    };
   }
 
 }

@@ -12,7 +12,7 @@ body {
   /* width: 100%; */
 }
 #table-wrap, #table-wrap2 {
-  /* position: absolute; */
+  position: relative;
   /* width: 100%; */
   /* height: 100%; */
   overflow: auto;
@@ -32,6 +32,7 @@ body {
   border-collapse: collapse;
   table-layout: fixed;
   width: 100%;
+  margin: 20px 0 0 30px;
 }
 .super-table td {
   border: 1px solid #000;
@@ -41,24 +42,12 @@ body {
   overflow: hidden;
   font-size: 12px;
 }
-.super-table tr td:first-child, .super-table tr:first-child td {
-  background-color: #D1D1D1;
-}
-.super-table tr:first-child {
-  text-align: center;
-}
-.super-table tr td:first-child {
-  width: 30px;
-  text-align: center;
-}
 table td.hover {
   background-color: rgba(209, 209, 209, 0.36);
 }
 table td input:focus {
   background-color: #D1D1D1;
   outline: none;
-  /*border-top: 2px solid #d1d1d1;*/
-  /*border-bottom: 2px solid #d1d1d1;*/
 }
 table input {
   display: block;
@@ -94,4 +83,33 @@ table input {
 }
 .tabs-wrap label:hover div {
  display: inline-block; 
+}
+.super-table-rows {
+  position: absolute;
+  top: 20px;
+  left: 0;
+  border-collapse: collapse;
+  table-layout: fixed;
+  background-color: #D1D1D1;
+}
+.super-table-rows td {
+  width: 30px;
+  height: 20px;
+  border: 1px solid #000;
+  text-align: center;
+}
+.super-table-columns {
+  position: absolute;
+  width: 100%;
+  top: 0;
+  left: 30px;
+  border-collapse: collapse;
+  table-layout: fixed;
+  background-color: #D1D1D1;
+}
+.super-table-columns td {
+  width: 80px;
+  height: 20px;
+  border: 1px solid #000;
+  text-align: center;
 }
