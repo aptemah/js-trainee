@@ -515,13 +515,12 @@ function MyExcel() {
   this.cellParse = function(indexOfCell) {
 
     var self = this;
-    console.log(indexOfCell.match(/\w{1,}/)[0])
+
     var cellIndex = this.charToIndex( indexOfCell.match(/[a-z]{1,}/i)[0] );
     var rowIndex = indexOfCell.match(/\d{1,}/)[0];
 
-    var needlyCell = table.rows[rowIndex].cells[cellIndex].textContent;
-    console.dir(needlyCell);
-
+    var needlyCell = table.rows[rowIndex - 1].cells[cellIndex];
+    var string = needlyCell.textContent;
     if (string.search(/^=/) != "-1") {
       var result = 0;
       var lastOperand = "";
