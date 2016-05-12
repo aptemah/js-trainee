@@ -520,6 +520,7 @@ function MyExcel() {
   };
 
 }
+
 MyExcel.prototype.cellParse = function(indexOfCell) {
 
   var cellIndex = this.charToIndex( indexOfCell.match(/[a-z]{1,}/i)[0] );
@@ -532,27 +533,18 @@ MyExcel.prototype.cellParse = function(indexOfCell) {
 
     var that = this;
     var result = 0;
-
-
     var lastOperand = "";
     var mathArray = string.match(/\d{1,}|\+|\-|\*|\/|\^|\w{1,}\d{1,}/g);
+    var arrayForEval = [];
 
-    mathArray.forEach(function(item){
-
-      if (item.match(/\+|\-|\*|\/|\^/) != null) {//если оператор
-        lastOperand = item;
+    mathArray.forEach(function(item){//преобразование ссылок в числа
+      if (item.match(/[a-z]{1,}\d{1,}/i) != null) { arrayForEval.push( that.cellParse(item) ) } else {
+        arrayForEval.push(item);
       }
-
-      if (item.match(/^\d{1,}/) != null) {//если число
-        doOperation(parseInt(item));
-      }
-
-      if (item.match(/[a-z]{1,}\d{1,}/i) != null) {//если ссылка
-        var referenceCellContent = that.cellParse(item);
-        doOperation(parseInt(referenceCellContent));
-      }
-
     });
+
+    result = eval(arrayForEval.toString().replace(/,/g," "));
+
     return result;
   } else {return string}
 
