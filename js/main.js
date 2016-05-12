@@ -9,7 +9,7 @@ function MyExcel() {
 
   this.charArray = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"];
 
-}
+};
 
 
 MyExcel.prototype.init = function (block, width, height, cellWidth, cellHeight) {
@@ -78,6 +78,8 @@ MyExcel.prototype.init = function (block, width, height, cellWidth, cellHeight) 
     }
 
   });
+
+  this.getCoords();
 
 };
 
@@ -193,48 +195,86 @@ MyExcel.prototype.cellSelect = function () {
 
   var self = this;
 
-  this.table.addEventListener("click", (e) => {
+  this.hoverFunction = function (e) {
+
     if (e.target.tagName == "TD") {
 
       var rowIndex = e.target.parentElement.rowIndex;
       var cellIndex = e.target.cellIndex;
-      var targetCell = this.table.tBodies[0].rows[rowIndex].cells[cellIndex];
+      var targetCell = self.table.tBodies[0].rows[rowIndex].cells[cellIndex];
       var input = document.createElement("INPUT");
 
-      this.selectedCell = this.indexToChar(cellIndex - 1) + (rowIndex - 1);
+      self.selectedCell = self.indexToChar(cellIndex - 1) + (rowIndex - 1);
 
       targetCell.className += "hover";
 
+      window.addEventListener("keydown", inputCreating);
+      targetCell.addEventListener("click", inputCreating);
+      self.table.addEventListener("click", deleteHoverClass);
+
+
       function inputCreating (e) {
+
+        self.table.removeEventListener("click", self.hoverFunction);
+        targetCell.removeEventListener("click", inputCreating);
+        self.table.removeEventListener("click", deleteHoverClass);
+        setTimeout(function(){self.table.addEventListener("click", addReference)});
+
+        input.addEventListener("keypress", enterButton);
+        input.addEventListener("keyup", escapeButton);
+
         input.value = targetCell.textContent;
+        self.oldValue = targetCell.textContent;//записываем старое значение, чтобы была возможность отменить ввод по escape
         targetCell.textContent = null;
         targetCell.appendChild(input);
         input.focus();
         window.removeEventListener("keydown", inputCreating);
+
       }
 
-      window.addEventListener("keydown", inputCreating);
 
-      self.table.addEventListener("click", deleteHoverClass);
+      function addReference () {
+
+        input.value = input.value + self.selectedCellCoords;
+        input.focus();
+
+      };
 
       function deleteHoverClass() {
+
+        window.removeEventListener("keydown", inputCreating);
         targetCell.className = targetCell.className.replace(/\bhover\b/,'');
+        targetCell.removeEventListener("click", inputCreating);
         self.table.removeEventListener("click", deleteHoverClass);
+
       }
 
-      input.addEventListener("blur", saveValue)
 
-      input.addEventListener("keypress", function(e){
+      function enterButton (e) {
 
         var key = e.which || e.keyCode;
         if (key === 13) { 
+          deleteHoverClass();
           saveValue();
         }
 
-      });
+      }
+
+
+      function escapeButton (e) {
+
+        var key = e.which || e.keyCode;
+        if (key === 27) {
+          input.value = self.oldValue;
+          deleteHoverClass();
+          saveValue();
+        }
+
+      }
+
 
       function saveValue() {
-        console.log("!!!")
+
         var currentSheet = self.tabsBlock.querySelector(":checked").value;
 
         if (!self.sheetObject[currentSheet].hasOwnProperty(rowIndex)) {
@@ -246,12 +286,36 @@ MyExcel.prototype.cellSelect = function () {
         input.parentElement.textContent = input.value;
         input = null;
 
+        self.table.removeEventListener("click", addReference);
+        self.table.removeEventListener("click", deleteHoverClass);
+        self.table.addEventListener("click", self.hoverFunction);
       };
 
     }
+  };
+
+  this.table.addEventListener("click", this.hoverFunction);
+
+};
+
+
+MyExcel.prototype.getCoords = function () {
+
+  var self = this;
+
+  this.table.addEventListener("click", (e) => {
+
+    if (e.target.tagName == "TD") {
+      var rowIndex = e.target.parentElement.rowIndex;
+      var cellIndex = e.target.cellIndex;
+
+      self.selectedCellCoords = self.indexToChar( cellIndex ) + (rowIndex + 1);
+
+    }
+
   });
 
-}
+};
 
 
 MyExcel.prototype.makeGrid = function () {
