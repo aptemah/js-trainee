@@ -20,9 +20,27 @@ MyExcel.prototype.init = function (block, width, height, cellWidth, cellHeight) 
   this.parentBlock = document.getElementById(block);
 
   if (localStorage.getItem(self.tableName)) {
+
     self.sheetObject = JSON.parse(localStorage[self.tableName]);
+
   } else {
-    self.sheetObject = {};
+
+    var tableName = "files/" + this.tableName + ".json";
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', tableName, false);
+    xhr.send();
+    if (xhr.status != 200) {
+
+      self.sheetObject = {};
+
+      } else {
+        try {
+          self.sheetObject = JSON.parse(xhr.responseText);
+          localStorage[this.tableName] = xhr.responseText;
+        } catch(err) {
+          self.sheetObject = {};
+        }
+    }
   };
 
   self.tabsBlock = document.createElement("DIV");
@@ -614,6 +632,27 @@ MyExcel.prototype.updateSheet = function () {
 
   localStorage[this.tableName] = JSON.stringify(this.sheetObject);
 
+  // 1. Создаём новый объект XMLHttpRequest
+  var xhr = new XMLHttpRequest();
+  console.log()
+  var body = "fileName=" + "files/" + this.tableName + ".json" + "&" + "object=" + JSON.stringify(this.sheetObject);
+  // 2. Конфигурируем его: GET-запрос на URL 'phones.json'
+  xhr.open('POST', 'create.php', false);
+  xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded')
+  // 3. Отсылаем запрос
+  xhr.send(body);
+
+  // 4. Если код ответа сервера не 200, то это ошибка
+  if (xhr.status != 200) {
+
+    // обработать ошибку
+
+    } else {
+
+    // вывести результат
+
+  }
+
 };
 
 
@@ -655,5 +694,7 @@ MyExcel.prototype.formulaParse = function (string) {
 
 
 MyExcel.prototype.ifFormula = function (string) {
+
   if (string.search(/^=/) != "-1") {return true} else {return false}
+
 }
