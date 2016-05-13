@@ -80,6 +80,7 @@ MyExcel.prototype.init = function (block, width, height, cellWidth, cellHeight) 
   });
 
   this.getCoords();
+  this.makeGrid(this.table);
 
 };
 
@@ -185,6 +186,7 @@ MyExcel.prototype.creatingTableDom = function (currentSheet) {
   }
 
   this.parentBlock.appendChild(this.table);
+
   this.fillCells(currentSheet);//Заполняем ячейки
   this.cellSelect();
 
@@ -222,8 +224,13 @@ MyExcel.prototype.cellSelect = function () {
 
         input.addEventListener("keypress", enterButton);
         input.addEventListener("keyup", escapeButton);
+        try {//если кликаешь по пустой ячейке (которой, естественно, нет в sheetObject, сыпятся ошибки. Чтоб не делать проверки, решил заюзать try catch)
+          if (self.sheetObject[self.currentSheet][rowIndex][cellIndex]) {input.value = self.sheetObject[self.currentSheet][rowIndex][cellIndex];
+          } else {
+            input.value = "";
+          }
+        } catch(err) {}
 
-        input.value = targetCell.textContent;
         self.oldValue = targetCell.textContent;//записываем старое значение, чтобы была возможность отменить ввод по escape
         targetCell.textContent = null;
         targetCell.appendChild(input);
@@ -242,8 +249,8 @@ MyExcel.prototype.cellSelect = function () {
 
       function deleteHoverClass() {
 
-        window.removeEventListener("keydown", inputCreating);
         targetCell.className = targetCell.className.replace(/\bhover\b/,'');
+        window.removeEventListener("keydown", inputCreating);
         targetCell.removeEventListener("click", inputCreating);
         self.table.removeEventListener("click", deleteHoverClass);
 
@@ -267,7 +274,12 @@ MyExcel.prototype.cellSelect = function () {
         if (key === 27) {
           input.value = self.oldValue;
           deleteHoverClass();
-          saveValue();
+          input.parentElement.textContent = input.value;
+          input = null;
+
+          self.table.removeEventListener("click", addReference);
+          self.table.removeEventListener("click", deleteHoverClass);
+          self.table.addEventListener("click", self.hoverFunction);
         }
 
       }
@@ -283,7 +295,13 @@ MyExcel.prototype.cellSelect = function () {
 
         self.sheetObject[currentSheet][rowIndex][cellIndex] = input.value;
         self.updateSheet();
-        input.parentElement.textContent = input.value;
+
+        if (self.ifFormula(input.value)) {
+          input.parentElement.textContent = self.formulaParse( input.value )
+        } else {
+          input.parentElement.textContent = input.value
+        }
+
         input = null;
 
         self.table.removeEventListener("click", addReference);
@@ -435,7 +453,6 @@ MyExcel.prototype.tabSwitching = function () {
 
       var tabToDelete = [e.target.parentElement, e.target.parentElement.previousElementSibling];
       var clickedButtonIndex = parseInt(e.target.parentElement.previousElementSibling.value);
-      console.log(clickedButtonIndex);
       this.tabDelete(clickedButtonIndex, tabToDelete);
 
     }
@@ -446,10 +463,12 @@ MyExcel.prototype.tabSwitching = function () {
 
 MyExcel.prototype.fillCells = function (currentSheet) {
 
+  var self = this;
+
   if (currentSheet == undefined) {
     var currentSheet = tabsBlock.querySelector(":checked").value;
   }
-
+  this.currentSheet = currentSheet;
   var cells = this.table.querySelectorAll("td");
   cells = Array.prototype.slice.call(cells);
 
@@ -459,13 +478,18 @@ MyExcel.prototype.fillCells = function (currentSheet) {
 
   for (var row in this.sheetObject[currentSheet]) {
     if (row != "settings") {
+      var currentRow = this.sheetObject[currentSheet][row];
       for (var cell in this.sheetObject[currentSheet][row]) {
-        this.table.rows[row].cells[cell].textContent = this.sheetObject[currentSheet][row][cell];
+        var text = currentRow[cell];
+        var cellText = this.table.rows[row].cells[cell].textContent;
+        if (text.search(/^=/) != "-1") {//проверка не формула ли это
+          this.table.rows[row].cells[cell].textContent = self.formulaParse( text )
+        } else {
+          this.table.rows[row].cells[cell].textContent = text;
+        };
       }
     }
   }
-
-  this.makeGrid(this.table);
 
 };
 
@@ -598,8 +622,7 @@ MyExcel.prototype.cellParse = function(indexOfCell) {
   var cellIndex = this.charToIndex( indexOfCell.match(/[a-z]{1,}/i)[0] );
   var rowIndex = indexOfCell.match(/\d{1,}/)[0];
 
-  var needlyCell = this.table.rows[rowIndex - 1].cells[cellIndex];
-  var string = needlyCell.textContent;
+  var string = this.sheetObject[this.currentSheet][rowIndex - 1][cellIndex];
 
   if (string.search(/^=/) != "-1") {
 
@@ -619,7 +642,7 @@ MyExcel.prototype.formulaParse = function (string) {
   var arrayForEval = [];
 
   mathArray.forEach(function(item){//преобразование ссылок в числа
-    if (item.match(/[a-z]{1,}\d{1,}/i) != null) { arrayForEval.push( self.cellParse(item) ) } else {
+    if (item.match(/[a-z]{1,}\d{1,}/i) != null) { var parsedItem = self.cellParse(item); arrayForEval.push( parsedItem ) } else {
       arrayForEval.push(item);
     }
   });
@@ -629,3 +652,8 @@ MyExcel.prototype.formulaParse = function (string) {
   return result;
 
 };
+
+
+MyExcel.prototype.ifFormula = function (string) {
+  if (string.search(/^=/) != "-1") {return true} else {return false}
+}
