@@ -191,6 +191,11 @@ MyExcel.prototype.creatingTableDom = function (currentSheet) {
   if (rowsInitialAmount < maxRowNumber) {rowsInitialAmount = maxRowNumber + 1};
   if (columnsInitialAmount < maxCellNumber) {columnsInitialAmount = maxCellNumber + 1};
 
+  this.globalInput = document.createElement("INPUT");
+  this.globalInput.id = this.tableName + "-global-input";
+  this.globalInput.className = "global-input";
+  this.parentBlock.appendChild(this.globalInput);
+
   var tableFragment = document.createDocumentFragment();
   this.table = document.createElement("TABLE");
   this.table.className = "super-table";
@@ -253,15 +258,35 @@ MyExcel.prototype.cellSelect = function () {
         targetCell.textContent = null;
         targetCell.appendChild(input);
         input.focus();
+        inputBinding();
         window.removeEventListener("keydown", inputCreating);
 
       }
 
 
-      function addReference () {
+      function inputBinding () {
 
-        input.value = input.value + self.selectedCellCoords;
-        input.focus();
+        var globalInput = self.globalInput;
+        globalInput.className = globalInput.className + " active"
+        console.log(globalInput.className);
+
+        input.oninput = function() {
+          globalInput.value = input.value;
+        };
+
+        globalInput.oninput = function() {
+          input.value = globalInput.value;
+        };
+
+      };
+
+
+      function addReference (e) {
+
+        if (e.target != input) {
+          input.value = input.value + self.selectedCellCoords;
+          input.focus();
+        }
 
       };
 
@@ -298,6 +323,7 @@ MyExcel.prototype.cellSelect = function () {
           self.table.removeEventListener("click", addReference);
           self.table.removeEventListener("click", deleteHoverClass);
           self.table.addEventListener("click", self.hoverFunction);
+          inputUnfocus();
         }
 
       }
@@ -325,6 +351,14 @@ MyExcel.prototype.cellSelect = function () {
         self.table.removeEventListener("click", addReference);
         self.table.removeEventListener("click", deleteHoverClass);
         self.table.addEventListener("click", self.hoverFunction);
+        inputUnfocus();
+      };
+
+
+      function inputUnfocus () {
+
+        self.globalInput.className = self.globalInput.className.replace(/\bactive\b/,'');
+
       };
 
     }
@@ -638,10 +672,11 @@ MyExcel.prototype.updateSheet = function () {
   var body = "fileName=" + "files/" + this.tableName + ".json" + "&" + "object=" + JSON.stringify(this.sheetObject);
   // 2. Конфигурируем его: GET-запрос на URL 'phones.json'
   xhr.open('POST', 'create.php', false);
-  xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded')
+  xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
   // 3. Отсылаем запрос
+  try {
   xhr.send(body);
-
+  } catch(err) {console.log("Данные на сервере не сохранены")};
   // 4. Если код ответа сервера не 200, то это ошибка
   if (xhr.status != 200) {
 

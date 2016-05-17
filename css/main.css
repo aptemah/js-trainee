@@ -113,3 +113,11 @@ table input {
   border: 1px solid #000;
   text-align: center;
 }
+.global-input {
+  position: absolute;
+  display: none;
+  z-index: 1;
+}
+.global-input.active {
+  display: block;
+}
