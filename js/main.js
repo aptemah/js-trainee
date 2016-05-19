@@ -171,11 +171,13 @@ MyExcel.prototype.creatingTableDom = function (currentSheet) {
 
   for (var row in this.sheetObject[currentSheet]) {
 
+    if (!this.sheetObject[currentSheet].hasOwnProperty(row)) continue;
     var currentRowNumber = parseInt( row );
     if ( currentRowNumber > maxRowNumber ) { maxRowNumber = currentRowNumber };
 
     for ( var cell in this.sheetObject[currentSheet][row]) {
 
+      if (!this.sheetObject[currentSheet][row].hasOwnProperty(cell)) continue;
       var currentCellNumber = parseInt( cell );
       if ( currentCellNumber > maxCellNumber ) { maxCellNumber = currentCellNumber };
 
@@ -268,7 +270,6 @@ MyExcel.prototype.cellSelect = function () {
 
         var globalInput = self.globalInput;
         globalInput.className = globalInput.className + " active"
-        console.log(globalInput.className);
 
         input.oninput = function() {
           globalInput.value = input.value;
@@ -476,14 +477,16 @@ MyExcel.prototype.setReaddressSheet = function (index) {
   //выясняем на какой таб будет переадресация после удаления
   var previousElement = 0;//кодовое число, будет использоваться в случае если это первый лист
   for (var sheet in this.sheetObject) {
-      if (previousElement != undefined) {
-        if (sheet != index) {//если первый лист, проверяем не единственный ли это лист
-          return sheet;
-          break;
-        }
-        return previousElement;
+
+    if (!this.sheetObject.hasOwnProperty(sheet)) continue;
+    if (previousElement != undefined) {
+      if (sheet != index) {//если первый лист, проверяем не единственный ли это лист
+        return sheet;
         break;
       }
+      return previousElement;
+      break;
+    }
     previousElement = sheet;
   }
 
@@ -525,6 +528,7 @@ MyExcel.prototype.fillCells = function (currentSheet) {
   cells = Array.prototype.slice.call(cells);
 
   for (var cell in cells) {
+    if (!cells.hasOwnProperty(cell)) continue;
     cells[cell].textContent = null;
   }
 
@@ -532,6 +536,7 @@ MyExcel.prototype.fillCells = function (currentSheet) {
     if (row != "settings") {
       var currentRow = this.sheetObject[currentSheet][row];
       for (var cell in this.sheetObject[currentSheet][row]) {
+        if (!this.sheetObject[currentSheet][row].hasOwnProperty(cell)) continue;
         var text = currentRow[cell];
         var cellText = this.table.rows[row].cells[cell].textContent;
         if (text.search(/^=/) != "-1") {//проверка не формула ли это
@@ -549,6 +554,7 @@ MyExcel.prototype.fillCells = function (currentSheet) {
 MyExcel.prototype.setCurrentSheet = function (index) {
 
   for (var sheet in this.sheetObject) {
+    if (!this.sheetObject.hasOwnProperty(sheet)) continue;
     this.sheetObject[sheet].settings.current = false;
   }
 
@@ -600,6 +606,7 @@ MyExcel.prototype.tabGenerating = function () {
   } else { //если в this.sheetObject есть данные о листах, строим табы в соответствии с this.sheetObject
 
     for (var sheet in this.sheetObject) {
+      
       if (!this.sheetObject.hasOwnProperty(sheet)) {
         continue;
       }
@@ -697,6 +704,8 @@ MyExcel.prototype.cellParse = function(indexOfCell) {
   var rowIndex = indexOfCell.match(/\d{1,}/)[0];
 
   var string = this.sheetObject[this.currentSheet][rowIndex - 1][cellIndex];
+
+  if (string == undefined) {return 0}
 
   if (string.search(/^=/) != "-1") {
 
