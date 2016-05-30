@@ -12,7 +12,7 @@ function MyExcel() {
 };
 
 
-MyExcel.prototype.init = function (block, width, height, cellWidth, cellHeight) {
+MyExcel.prototype.init = function (block, rows, columns) {
 
   var self = this;
 
@@ -49,12 +49,12 @@ MyExcel.prototype.init = function (block, width, height, cellWidth, cellHeight) 
   self.tabGenerating();
 
   var heightOfTable = this.viewportHeight - parseInt(window.getComputedStyle(this.parentBlock).getPropertyValue('margin-top'));
-  if (width == undefined)  {this.parentBlock.style.width  = (this.viewportWidth + "px");}
-  if (height == undefined) {this.parentBlock.style.height = (heightOfTable + "px");}
-  if (cellWidth == undefined) {self.cellWidth = 80;}
-  if (cellHeight == undefined) {self.cellHeight = 20;}
+  this.parentBlock.style.width  = (this.viewportWidth + "px");
+  this.parentBlock.style.height = (heightOfTable + "px");
+  self.cellWidth = 80;
+  self.cellHeight = 20;
 
-  self.creatingTableDom();
+  self.creatingTableDom(false, rows, columns);
 
   this.parentBlock.addEventListener("scroll", function(){
 
@@ -159,7 +159,7 @@ MyExcel.prototype.charToIndex = function (char) {
 };
 
 
-MyExcel.prototype.creatingTableDom = function (currentSheet) {
+MyExcel.prototype.creatingTableDom = function (currentSheet, rows, columns) {
 
   //создание DOM таблицы
   if (currentSheet == undefined) {
@@ -187,11 +187,15 @@ MyExcel.prototype.creatingTableDom = function (currentSheet) {
 
   if (this.table) {this.parentBlock.removeChild(this.table);}
 
-  var rowsInitialAmount = Math.ceil(this.viewportHeight / this.cellHeight);
-  var columnsInitialAmount = Math.ceil(this.viewportWidth / this.cellWidth);
+  if (!rows) {
+    var rowsInitialAmount = Math.ceil(this.viewportHeight / this.cellHeight);
+    if (rowsInitialAmount < maxRowNumber) {rowsInitialAmount = maxRowNumber + 1};
+  } else { rowsInitialAmount = rows }
 
-  if (rowsInitialAmount < maxRowNumber) {rowsInitialAmount = maxRowNumber + 1};
-  if (columnsInitialAmount < maxCellNumber) {columnsInitialAmount = maxCellNumber + 1};
+  if (!columns) {
+    var columnsInitialAmount = Math.ceil(this.viewportWidth / this.cellWidth);
+    if (columnsInitialAmount < maxCellNumber) {columnsInitialAmount = maxCellNumber + 1};
+  } else { columnsInitialAmount = columns }
 
   this.globalInput = document.createElement("INPUT");
   this.globalInput.id = this.tableName + "-global-input";
@@ -285,9 +289,11 @@ MyExcel.prototype.cellSelect = function () {
       function addReference (e) {
 
         if (e.target != input) {
-          input.value = input.value + self.selectedCellCoords;
-          input.focus();
-        }
+          if (input.value.search(/^=/) != "-1") {
+            input.value = input.value + self.selectedCellCoords;
+            input.focus();
+          } else { saveValue() }
+        } else { saveValue() }
 
       };
 
@@ -305,7 +311,6 @@ MyExcel.prototype.cellSelect = function () {
 
         var key = e.which || e.keyCode;
         if (key === 13) { 
-          deleteHoverClass();
           saveValue();
         }
 
@@ -331,6 +336,8 @@ MyExcel.prototype.cellSelect = function () {
 
 
       function saveValue() {
+
+        deleteHoverClass();
 
         var currentSheet = self.tabsBlock.querySelector(":checked").value;
 
@@ -516,13 +523,13 @@ MyExcel.prototype.tabSwitching = function () {
 };
 
 
-MyExcel.prototype.fillCells = function (currentSheet) {
-
+MyExcel.prototype.fillCells = function (curSheet) {
   var self = this;
 
-  if (currentSheet == undefined) {
-    var currentSheet = tabsBlock.querySelector(":checked").value;
-  }
+  if (curSheet == undefined) {
+    var currentSheet = self.tabsBlock.querySelector(":checked").value;
+  } else { }
+
   this.currentSheet = currentSheet;
   var cells = this.table.querySelectorAll("td");
   cells = Array.prototype.slice.call(cells);
@@ -531,6 +538,7 @@ MyExcel.prototype.fillCells = function (currentSheet) {
     if (!cells.hasOwnProperty(cell)) continue;
     cells[cell].textContent = null;
   }
+  console.log(currentSheet)
 
   for (var row in this.sheetObject[currentSheet]) {
     if (row != "settings") {
