@@ -1,4 +1,4 @@
- "use strict";
+
 
 function MyExcel() {
 
@@ -48,8 +48,11 @@ MyExcel.prototype.init = function (block, rows, columns) {
   this.parentBlock.parentNode.insertBefore(self.tabsBlock, this.parentBlock.nextSibling);
   self.tabGenerating();
 
-  var heightOfTable = this.viewportHeight - parseInt(window.getComputedStyle(this.parentBlock).getPropertyValue('margin-top'));
-  this.parentBlock.style.width  = (this.viewportWidth + "px");
+  //из высоты вычитаем отступ сверху и высоту табов
+  var heightOfTable = this.viewportHeight - parseInt(window.getComputedStyle(this.parentBlock).getPropertyValue('margin-top')) - self.tabsBlock.clientHeight;
+  //из ширины вычитаем ширину скролла
+  var widthOfTable = this.viewportWidth - self.scrollWidth();
+  this.parentBlock.style.width  = (widthOfTable + "px");
   this.parentBlock.style.height = (heightOfTable + "px");
   self.cellWidth = 80;
   self.cellHeight = 20;
@@ -177,32 +180,15 @@ MyExcel.prototype.charToIndex = function (char) {
 
 
 MyExcel.prototype.creatingTableDom = function (currentSheet, rows, columns) {
-
   //создание DOM таблицы
   if (currentSheet == undefined) {
     this.currentSheet = this.tabsBlock.querySelector(":checked").value;
-  }
+  } else { this.currentSheet = currentSheet };
 
   var maxRowNumber  = 0;
   var maxCellNumber = 0;
 
-  for (var row in this.sheetObject[this.currentSheet]) {
-
-    if (!this.sheetObject[this.currentSheet].hasOwnProperty(row)) continue;
-    var currentRowNumber = parseInt( row );
-    if ( currentRowNumber > maxRowNumber ) { maxRowNumber = currentRowNumber };
-
-    for ( var cell in this.sheetObject[this.currentSheet][row]) {
-
-      if (!this.sheetObject[this.currentSheet][row].hasOwnProperty(cell)) continue;
-      var currentCellNumber = parseInt( cell );
-      if ( currentCellNumber > maxCellNumber ) { maxCellNumber = currentCellNumber };
-
-    }
-
-  }
-
-  if (this.table) {this.parentBlock.removeChild(this.table);}
+  if (this.table) {this.parentBlock.removeChild(this.table)}
 
   if (!rows) {
     var rowsInitialAmount = Math.ceil(this.viewportHeight / this.cellHeight);
@@ -417,6 +403,13 @@ MyExcel.prototype.makeGrid = function () {
 
   var self = this;
 
+  if (this.gridTableElementRows) {
+    self.parentBlock.removeChild(this.gridTableElementRows);
+  }
+  if (this.gridTableElementColumns) {
+    self.parentBlock.removeChild(this.gridTableElementColumns);
+  }
+
   this.addNewRow = function (numberOfRow) {
 
     this.gridTableElementRows.rows[numberOfRow].cells[0].textContent = numberOfRow + 1;
@@ -521,11 +514,12 @@ MyExcel.prototype.tabSwitching = function () {
 
   var tabsWrap = this.tabsBlock;
   tabsWrap.addEventListener("click", (e) =>{
-
     if (e.target.nodeName == "LABEL") {
       var clickedTabIndex = e.target.previousElementSibling.value;
       this.setCurrentSheet(clickedTabIndex);
       this.creatingTableDom(clickedTabIndex);
+      this.parentBlock.scrollTop = this.scrollPosition();
+      this.makeGrid();
     }
 
     if (e.target.className == "del") {
@@ -540,6 +534,7 @@ MyExcel.prototype.tabSwitching = function () {
 
 
 MyExcel.prototype.fillCells = function (curSheet) {
+
   var self = this;
 
   if (!curSheet) {
@@ -699,7 +694,6 @@ MyExcel.prototype.updateSheet = function () {
 
   // 1. Создаём новый объект XMLHttpRequest
   var xhr = new XMLHttpRequest();
-  console.log()
   var body = "fileName=" + "files/" + this.tableName + ".json" + "&" + "object=" + JSON.stringify(this.sheetObject);
   // 2. Конфигурируем его: GET-запрос на URL 'phones.json'
   xhr.open('POST', 'create.php', false);
@@ -764,5 +758,30 @@ MyExcel.prototype.formulaParse = function (string) {
 MyExcel.prototype.ifFormula = function (string) {
 
   if (string.search(/^=/) != "-1") {return true} else {return false}
+
+}
+
+
+MyExcel.prototype.scrollWidth = function (string) {
+
+  var div = document.createElement('div');
+
+  div.style.overflowY = 'scroll';
+  div.style.width = '50px';
+  div.style.height = '50px';
+
+  div.style.visibility = 'hidden';
+
+  document.body.appendChild(div);
+  var scrollWidth = div.offsetWidth - div.clientWidth;
+  document.body.removeChild(div);
+  return scrollWidth;
+
+}
+
+
+MyExcel.prototype.scrollPosition = function (string) {
+
+  return 0;
 
 }
