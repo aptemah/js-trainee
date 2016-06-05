@@ -12,7 +12,7 @@ function MyExcel() {
 };
 
 
-MyExcel.prototype.init = function (block, rows, columns) {
+MyExcel.prototype.init = function (block, settings) {
 
   var self = this;
 
@@ -48,16 +48,21 @@ MyExcel.prototype.init = function (block, rows, columns) {
   this.parentBlock.parentNode.insertBefore(self.tabsBlock, this.parentBlock.nextSibling);
   self.tabGenerating();
 
-  //из высоты вычитаем отступ сверху и высоту табов
-  var heightOfTable = this.viewportHeight - parseInt(window.getComputedStyle(this.parentBlock).getPropertyValue('margin-top')) - self.tabsBlock.clientHeight;
-  //из ширины вычитаем ширину скролла
-  var widthOfTable = this.viewportWidth - self.scrollWidth();
+  if (settings.width != undefined && settings.width != null) { widthOfTable = settings.width} else {
+    //из ширины вычитаем ширину скролла
+    var widthOfTable = this.viewportWidth - self.scrollWidth();
+  }
+  if (settings.height != undefined && settings.height != null) { heightOfTable = settings.height} else {
+    //из высоты вычитаем отступ сверху и высоту табов
+    var heightOfTable = this.viewportHeight - parseInt(window.getComputedStyle(this.parentBlock).getPropertyValue('margin-top')) - self.tabsBlock.clientHeight;
+  }
+
   this.parentBlock.style.width  = (widthOfTable + "px");
   this.parentBlock.style.height = (heightOfTable + "px");
   self.cellWidth = 80;
   self.cellHeight = 20;
 
-  self.creatingTableDom(false, rows, columns);
+  self.creatingTableDom(false, settings.rows, settings.columns);
 
   this.parentBlock.addEventListener("scroll", function(){
 
