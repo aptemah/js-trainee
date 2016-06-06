@@ -750,7 +750,7 @@ MyExcel.prototype.updateSheet = function () {
 
   // 1. Создаём новый объект XMLHttpRequest
   var xhr = new XMLHttpRequest();
-  var body = "fileName=" + "files/" + this.tableName + ".json" + "&" + "object=" + JSON.stringify(this.sheetObject);
+  var body = "fileName=" + "files/" + this.tableName + ".json" + "&" + "object=" + encodeURIComponent(JSON.stringify(this.sheetObject));
   // 2. Конфигурируем его: GET-запрос на URL 'phones.json'
   xhr.open('POST', 'create.php', false);
   xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
