@@ -1,4 +1,4 @@
- "use strict";
+
 
 function MyExcel() {
 
@@ -12,7 +12,7 @@ function MyExcel() {
 };
 
 
-MyExcel.prototype.init = function (block, width, height, cellWidth, cellHeight) {
+MyExcel.prototype.init = function (block, settings) {
 
   var self = this;
 
@@ -48,13 +48,21 @@ MyExcel.prototype.init = function (block, width, height, cellWidth, cellHeight) 
   this.parentBlock.parentNode.insertBefore(self.tabsBlock, this.parentBlock.nextSibling);
   self.tabGenerating();
 
-  var heightOfTable = this.viewportHeight - parseInt(window.getComputedStyle(this.parentBlock).getPropertyValue('margin-top'));
-  if (width == undefined)  {this.parentBlock.style.width  = (this.viewportWidth + "px");}
-  if (height == undefined) {this.parentBlock.style.height = (heightOfTable + "px");}
-  if (cellWidth == undefined) {self.cellWidth = 80;}
-  if (cellHeight == undefined) {self.cellHeight = 20;}
+  if (settings.width != undefined && settings.width != null) { widthOfTable = settings.width} else {
+    //из ширины вычитаем ширину скролла
+    var widthOfTable = this.viewportWidth - self.scrollWidth();
+  }
+  if (settings.height != undefined && settings.height != null) { heightOfTable = settings.height} else {
+    //из высоты вычитаем отступ сверху и высоту табов
+    var heightOfTable = this.viewportHeight - parseInt(window.getComputedStyle(this.parentBlock).getPropertyValue('margin-top')) - self.tabsBlock.clientHeight;
+  }
 
-  self.creatingTableDom();
+  this.parentBlock.style.width  = (widthOfTable + "px");
+  this.parentBlock.style.height = (heightOfTable + "px");
+  self.cellWidth = 80;
+  self.cellHeight = 20;
+
+  self.creatingTableDom(false, settings.rows, settings.columns);
 
   this.parentBlock.addEventListener("scroll", function(){
 
@@ -70,12 +78,21 @@ MyExcel.prototype.init = function (block, width, height, cellWidth, cellHeight) 
         self.gridTableElementRows.rows[row.rowIndex].cells[0].textContent = row.rowIndex + 1;
 
         for (var j = 0; j < cellsQuantity; j++) {
-          row.insertCell();
+          var cell = row.insertCell();
+
+          //заполняем ячейки, если они присутствуют в sheetObject
+          if (self.sheetObject[self.currentSheet][row.rowIndex]) {
+            if (self.sheetObject[self.currentSheet][row.rowIndex][cell.cellIndex]) {
+              cell.textContent = self.sheetObject[self.currentSheet][row.rowIndex][cell.cellIndex]
+            }
+          }
+
         }
       }
 
     }
 
+    //Горизонтальный скролл
     if (self.parentBlock.scrollLeft == self.parentBlock.scrollWidth - self.parentBlock.clientWidth) {
 
       var numberOfAddingColumns = 5;
@@ -86,10 +103,18 @@ MyExcel.prototype.init = function (block, width, height, cellWidth, cellHeight) 
         self.gridTableElementColumns.rows[0].cells[cellIndex].textContent = self.indexToChar(cellIndex);
       }
       //добавления в основную таблицу
-      for (var x in self.table.rows) {
-        if (!self.table.rows.hasOwnProperty(x)) continue;
+      for (var row in self.table.rows) {
+        if (!self.table.rows.hasOwnProperty(row)) continue;
         for (var i = 0; i < numberOfAddingColumns; i++) {
-          var cell = self.table.rows[x].insertCell();
+          var cell = self.table.rows[row].insertCell();
+
+          //заполняем ячейки, если они присутствуют в sheetObject
+          if (self.sheetObject[self.currentSheet][row]) {
+            if (self.sheetObject[self.currentSheet][row][cell.cellIndex]) {
+              cell.textContent = self.sheetObject[self.currentSheet][row][cell.cellIndex]
+            }
+          }
+
         }
       }
 
@@ -159,39 +184,26 @@ MyExcel.prototype.charToIndex = function (char) {
 };
 
 
-MyExcel.prototype.creatingTableDom = function (currentSheet) {
-
+MyExcel.prototype.creatingTableDom = function (currentSheet, rows, columns) {
   //создание DOM таблицы
   if (currentSheet == undefined) {
-    var currentSheet = this.tabsBlock.querySelector(":checked").value;
-  }
+    this.currentSheet = this.tabsBlock.querySelector(":checked").value;
+  } else { this.currentSheet = currentSheet };
 
   var maxRowNumber  = 0;
   var maxCellNumber = 0;
 
-  for (var row in this.sheetObject[currentSheet]) {
+  if (this.table) {this.parentBlock.removeChild(this.table)}
 
-    if (!this.sheetObject[currentSheet].hasOwnProperty(row)) continue;
-    var currentRowNumber = parseInt( row );
-    if ( currentRowNumber > maxRowNumber ) { maxRowNumber = currentRowNumber };
+  if (!rows) {
+    var rowsInitialAmount = Math.ceil(this.viewportHeight / this.cellHeight);
+    if (rowsInitialAmount < maxRowNumber) {rowsInitialAmount = maxRowNumber + 1};
+  } else { rowsInitialAmount = rows }
 
-    for ( var cell in this.sheetObject[currentSheet][row]) {
-
-      if (!this.sheetObject[currentSheet][row].hasOwnProperty(cell)) continue;
-      var currentCellNumber = parseInt( cell );
-      if ( currentCellNumber > maxCellNumber ) { maxCellNumber = currentCellNumber };
-
-    }
-
-  }
-
-  if (this.table) {this.parentBlock.removeChild(this.table);}
-
-  var rowsInitialAmount = Math.ceil(this.viewportHeight / this.cellHeight);
-  var columnsInitialAmount = Math.ceil(this.viewportWidth / this.cellWidth);
-
-  if (rowsInitialAmount < maxRowNumber) {rowsInitialAmount = maxRowNumber + 1};
-  if (columnsInitialAmount < maxCellNumber) {columnsInitialAmount = maxCellNumber + 1};
+  if (!columns) {
+    var columnsInitialAmount = Math.ceil(this.viewportWidth / this.cellWidth);
+    if (columnsInitialAmount < maxCellNumber) {columnsInitialAmount = maxCellNumber + 1};
+  } else { columnsInitialAmount = columns }
 
   this.globalInput = document.createElement("INPUT");
   this.globalInput.id = this.tableName + "-global-input";
@@ -203,28 +215,16 @@ MyExcel.prototype.creatingTableDom = function (currentSheet) {
   this.table.className = "super-table";
   tableFragment.appendChild(this.table);
 
-  var tt = '';
-  var _ = Date.now();
-  for (var i = 0; i < rowsInitialAmount; i++) {
-  	tt += '<tr>';
-    for (var j = 0; j < columnsInitialAmount; j++) {
-      tt += '<td><td>';
-    }
-    tt += '</tr>';
-  }  
-  this.table.innerHTML = tt;
-  alert(Date.now() - _)
-/*
   for (var i = 0; i < rowsInitialAmount; i++) {
     var row = this.table.insertRow();
     for (var j = 0; j < columnsInitialAmount; j++) {
       row.insertCell();
     }
   }
-*/
+
   this.parentBlock.appendChild(this.table);
 
-  this.fillCells(currentSheet);//Заполняем ячейки
+  this.fillCells(this.currentSheet);//Заполняем ячейки
   this.cellSelect();
 
 };
@@ -297,9 +297,11 @@ MyExcel.prototype.cellSelect = function () {
       function addReference (e) {
 
         if (e.target != input) {
-          input.value = input.value + self.selectedCellCoords;
-          input.focus();
-        }
+          if (input.value.search(/^=/) != "-1") {
+            input.value = input.value + self.selectedCellCoords;
+            input.focus();
+          } else { saveValue() }
+        } else { saveValue() }
 
       };
 
@@ -316,8 +318,7 @@ MyExcel.prototype.cellSelect = function () {
       function enterButton (e) {
 
         var key = e.which || e.keyCode;
-        if (key === 13) { 
-          deleteHoverClass();
+        if (key === 13) {
           saveValue();
         }
 
@@ -344,6 +345,8 @@ MyExcel.prototype.cellSelect = function () {
 
       function saveValue() {
 
+        deleteHoverClass();
+
         var currentSheet = self.tabsBlock.querySelector(":checked").value;
 
         if (!self.sheetObject[currentSheet].hasOwnProperty(rowIndex)) {
@@ -354,9 +357,30 @@ MyExcel.prototype.cellSelect = function () {
         self.updateSheet();
 
         if (self.ifFormula(input.value)) {
-          input.parentElement.textContent = self.formulaParse( input.value )
+          input.parentElement.textContent = self.formulaParse( input.value );
+          self.table.dispatchEvent(widgetEvent);
+
+          //добавляем ячейки со ссылками в специальный объект
+          var formulaArray = input.value.match(/[a-z]{1,}\d{1,}/gi);
+          console.log(formulaArray);
+          if (formulaArray != null)
+          formulaArray.forEach(function(i){
+          var char = i.match(/[a-z]{1,}/i)[0],
+              digit = i.match(/\d{1,}/i)[0];
+            self.linkCells[parseInt( digit )] = self.charToIndex( char );
+          });
+
+          //добавляем ячейки с формулами в специальный объект
+          self.formulaCells[targetCell.parentElement.rowIndex] = targetCell.cellIndex;
+
         } else {
           input.parentElement.textContent = input.value
+        }
+
+        //Триггерим пересчет формул, если мы изменяем ячейку, на которую ссылаемся из других ячеек (self.linkCells)
+        if (self.linkCells.hasOwnProperty(targetCell.parentElement.rowIndex + 1)) {
+
+          if (self.linkCells[targetCell.parentElement.rowIndex + 1] == targetCell.cellIndex) {console.log(self.linkCells);self.table.dispatchEvent(widgetEvent)}
         }
 
         input = null;
@@ -370,7 +394,7 @@ MyExcel.prototype.cellSelect = function () {
 
       function inputUnfocus () {
 
-        self.globalInput.className = self.globalInput.className.replace(/\bactive\b/,'');
+        self.globalInput.className = self.globalInput.className.replace(/\b active\b/,'');
 
       };
 
@@ -404,6 +428,13 @@ MyExcel.prototype.getCoords = function () {
 MyExcel.prototype.makeGrid = function () {
 
   var self = this;
+
+  if (this.gridTableElementRows) {
+    self.parentBlock.removeChild(this.gridTableElementRows);
+  }
+  if (this.gridTableElementColumns) {
+    self.parentBlock.removeChild(this.gridTableElementColumns);
+  }
 
   this.addNewRow = function (numberOfRow) {
 
@@ -510,31 +541,45 @@ MyExcel.prototype.tabSwitching = function () {
   var tabsWrap = this.tabsBlock;
   tabsWrap.addEventListener("click", (e) =>{
     if (e.target.nodeName == "LABEL") {
-
       var clickedTabIndex = e.target.previousElementSibling.value;
       this.setCurrentSheet(clickedTabIndex);
       this.creatingTableDom(clickedTabIndex);
-
+      this.parentBlock.scrollTop = this.scrollPosition();
+      this.makeGrid();
     }
-    if (e.target.className == "del") {
 
+    if (e.target.className == "del") {
       var tabToDelete = [e.target.parentElement, e.target.parentElement.previousElementSibling];
       var clickedButtonIndex = parseInt(e.target.parentElement.previousElementSibling.value);
       this.tabDelete(clickedButtonIndex, tabToDelete);
-
     }
+
   });
 
 };
 
 
-MyExcel.prototype.fillCells = function (currentSheet) {
+MyExcel.prototype.fillCells = function (curSheet) {
 
   var self = this;
 
-  if (currentSheet == undefined) {
-    var currentSheet = tabsBlock.querySelector(":checked").value;
-  }
+  //Навешиваем событие на пересчет
+  self.formulaCells = {};
+  self.linkCells = {};
+
+  self.table.addEventListener("changePartOfFormula", function(){
+    for (x in self.formulaCells) {
+      var row = x,
+          cell = parseInt(self.formulaCells[x]),
+          text = self.sheetObject[self.currentSheet][row][cell];
+      self.table.rows[row].cells[cell].textContent = self.formulaParse( text );
+    }
+  });
+
+  if (!curSheet) {
+    var currentSheet = self.tabsBlock.querySelector(":checked").value;
+  } else { var currentSheet = curSheet }
+
   this.currentSheet = currentSheet;
   var cells = this.table.querySelectorAll("td");
   cells = Array.prototype.slice.call(cells);
@@ -549,10 +594,24 @@ MyExcel.prototype.fillCells = function (currentSheet) {
       var currentRow = this.sheetObject[currentSheet][row];
       for (var cell in this.sheetObject[currentSheet][row]) {
         if (!this.sheetObject[currentSheet][row].hasOwnProperty(cell)) continue;
+        if (!this.table.rows[row] || !this.table.rows[row].cells[cell]) continue;//Не заполняем несуществующие ячейки
         var text = currentRow[cell];
         var cellText = this.table.rows[row].cells[cell].textContent;
         if (text.search(/^=/) != "-1") {//проверка не формула ли это
-          this.table.rows[row].cells[cell].textContent = self.formulaParse( text )
+          this.table.rows[row].cells[cell].textContent = self.formulaParse( text );
+
+          //добавляем ячейки со ссылками в специальный объект
+          var formulaArray = text.match(/[a-z]{1,}\d{1,}/gi);
+          if (formulaArray != null)
+          formulaArray.forEach(function(i){
+          var char = i.match(/[a-z]{1,}/i)[0],
+              digit = i.match(/\d{1,}/i)[0];
+            self.linkCells[parseInt( digit )] = self.charToIndex( char );
+          });
+
+          //добавляем ячейки с формулами в специальный объект
+          self.formulaCells[row] = cell;
+
         } else {
           this.table.rows[row].cells[cell].textContent = text;
         };
@@ -561,6 +620,10 @@ MyExcel.prototype.fillCells = function (currentSheet) {
   }
 
 };
+
+var widgetEvent = new CustomEvent("changePartOfFormula", {
+  bubbles: true
+});
 
 
 MyExcel.prototype.setCurrentSheet = function (index) {
@@ -687,8 +750,7 @@ MyExcel.prototype.updateSheet = function () {
 
   // 1. Создаём новый объект XMLHttpRequest
   var xhr = new XMLHttpRequest();
-  console.log()
-  var body = "fileName=" + "files/" + this.tableName + ".json" + "&" + "object=" + JSON.stringify(this.sheetObject);
+  var body = "fileName=" + "files/" + this.tableName + ".json" + "&" + "object=" + encodeURIComponent(JSON.stringify(this.sheetObject));
   // 2. Конфигурируем его: GET-запрос на URL 'phones.json'
   xhr.open('POST', 'create.php', false);
   xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
@@ -752,5 +814,30 @@ MyExcel.prototype.formulaParse = function (string) {
 MyExcel.prototype.ifFormula = function (string) {
 
   if (string.search(/^=/) != "-1") {return true} else {return false}
+
+}
+
+
+MyExcel.prototype.scrollWidth = function (string) {
+
+  var div = document.createElement('div');
+
+  div.style.overflowY = 'scroll';
+  div.style.width = '50px';
+  div.style.height = '50px';
+
+  div.style.visibility = 'hidden';
+
+  document.body.appendChild(div);
+  var scrollWidth = div.offsetWidth - div.clientWidth;
+  document.body.removeChild(div);
+  return scrollWidth;
+
+}
+
+
+MyExcel.prototype.scrollPosition = function (string) {
+
+  return 0;
 
 }
