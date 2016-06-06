@@ -359,13 +359,28 @@ MyExcel.prototype.cellSelect = function () {
         if (self.ifFormula(input.value)) {
           input.parentElement.textContent = self.formulaParse( input.value );
           self.table.dispatchEvent(widgetEvent);
+
+          //добавляем ячейки со ссылками в специальный объект
+          var formulaArray = input.value.match(/[a-z]{1,}\d{1,}/gi);
+          console.log(formulaArray);
+          if (formulaArray != null)
+          formulaArray.forEach(function(i){
+          var char = i.match(/[a-z]{1,}/i)[0],
+              digit = i.match(/\d{1,}/i)[0];
+            self.linkCells[parseInt( digit )] = self.charToIndex( char );
+          });
+
+          //добавляем ячейки с формулами в специальный объект
+          self.formulaCells[targetCell.parentElement.rowIndex] = targetCell.cellIndex;
+
         } else {
           input.parentElement.textContent = input.value
         }
 
         //Триггерим пересчет формул, если мы изменяем ячейку, на которую ссылаемся из других ячеек (self.linkCells)
         if (self.linkCells.hasOwnProperty(targetCell.parentElement.rowIndex + 1)) {
-          if (self.linkCells[targetCell.parentElement.rowIndex + 1] == targetCell.cellIndex) {self.table.dispatchEvent(widgetEvent)}
+
+          if (self.linkCells[targetCell.parentElement.rowIndex + 1] == targetCell.cellIndex) {console.log(self.linkCells);self.table.dispatchEvent(widgetEvent)}
         }
 
         input = null;
