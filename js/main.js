@@ -203,13 +203,25 @@ MyExcel.prototype.creatingTableDom = function (currentSheet) {
   this.table.className = "super-table";
   tableFragment.appendChild(this.table);
 
+  var tt = '';
+  var _ = Date.now();
+  for (var i = 0; i < rowsInitialAmount; i++) {
+  	tt += '<tr>';
+    for (var j = 0; j < columnsInitialAmount; j++) {
+      tt += '<td><td>';
+    }
+    tt += '</tr>';
+  }  
+  this.table.innerHTML = tt;
+  alert(Date.now() - _)
+/*
   for (var i = 0; i < rowsInitialAmount; i++) {
     var row = this.table.insertRow();
     for (var j = 0; j < columnsInitialAmount; j++) {
       row.insertCell();
     }
   }
-
+*/
   this.parentBlock.appendChild(this.table);
 
   this.fillCells(currentSheet);//Заполняем ячейки
