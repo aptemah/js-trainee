@@ -373,7 +373,7 @@ MyExcel.prototype.cellSelect = function () {
 
       function inputUnfocus () {
 
-        self.globalInput.className = self.globalInput.className.replace(/\bactive\b/,'');
+        self.globalInput.className = self.globalInput.className.replace(/\b active\b/,'');
 
       };
 
@@ -565,12 +565,27 @@ MyExcel.prototype.fillCells = function (curSheet) {
         var cellText = this.table.rows[row].cells[cell].textContent;
         if (text.search(/^=/) != "-1") {//проверка не формула ли это
           this.table.rows[row].cells[cell].textContent = self.formulaParse( text )
+
+          //Вешаем событие, которое будет вызываться при изменении цепочки формул, и будет пересчитывать данную ячейку
+          this.table.rows[row].cells[cell].addEventListener("changePartOfFormula", function(){
+            this.table.rows[row].cells[cell].textContent = self.formulaParse( text )
+          });
+
         } else {
           this.table.rows[row].cells[cell].textContent = text;
         };
       }
     }
   }
+
+};
+
+  var widgetEvent = new CustomEvent("changePartOfFormula", {
+    bubbles: true
+  });
+MyExcel.prototype.formulaRecalculation = function () {
+
+
 
 };
 
