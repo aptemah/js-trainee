@@ -318,7 +318,7 @@ MyExcel.prototype.cellSelect = function () {
       function enterButton (e) {
 
         var key = e.which || e.keyCode;
-        if (key === 13) { 
+        if (key === 13) {
           saveValue();
         }
 
@@ -357,9 +357,15 @@ MyExcel.prototype.cellSelect = function () {
         self.updateSheet();
 
         if (self.ifFormula(input.value)) {
-          input.parentElement.textContent = self.formulaParse( input.value )
+          input.parentElement.textContent = self.formulaParse( input.value );
+          self.table.dispatchEvent(widgetEvent);
         } else {
           input.parentElement.textContent = input.value
+        }
+
+        //Триггерим пересчет формул, если мы изменяем ячейку, на которую ссылаемся из других ячеек (self.linkCells)
+        if (self.linkCells.hasOwnProperty(targetCell.parentElement.rowIndex + 1)) {
+          if (self.linkCells[targetCell.parentElement.rowIndex + 1] == targetCell.cellIndex) {self.table.dispatchEvent(widgetEvent)}
         }
 
         input = null;
@@ -542,6 +548,19 @@ MyExcel.prototype.fillCells = function (curSheet) {
 
   var self = this;
 
+  //Навешиваем событие на пересчет
+  self.formulaCells = {};
+  self.linkCells = {};
+
+  self.table.addEventListener("changePartOfFormula", function(){
+    for (x in self.formulaCells) {
+      var row = x,
+          cell = parseInt(self.formulaCells[x]),
+          text = self.sheetObject[self.currentSheet][row][cell];
+      self.table.rows[row].cells[cell].textContent = self.formulaParse( text );
+    }
+  });
+
   if (!curSheet) {
     var currentSheet = self.tabsBlock.querySelector(":checked").value;
   } else { var currentSheet = curSheet }
@@ -564,12 +583,19 @@ MyExcel.prototype.fillCells = function (curSheet) {
         var text = currentRow[cell];
         var cellText = this.table.rows[row].cells[cell].textContent;
         if (text.search(/^=/) != "-1") {//проверка не формула ли это
-          this.table.rows[row].cells[cell].textContent = self.formulaParse( text )
+          this.table.rows[row].cells[cell].textContent = self.formulaParse( text );
 
-          //Вешаем событие, которое будет вызываться при изменении цепочки формул, и будет пересчитывать данную ячейку
-          this.table.rows[row].cells[cell].addEventListener("changePartOfFormula", function(){
-            this.table.rows[row].cells[cell].textContent = self.formulaParse( text )
+          //добавляем ячейки со ссылками в специальный объект
+          var formulaArray = text.match(/[a-z]{1,}\d{1,}/gi);
+          if (formulaArray != null)
+          formulaArray.forEach(function(i){
+          var char = i.match(/[a-z]{1,}/i)[0],
+              digit = i.match(/\d{1,}/i)[0];
+            self.linkCells[parseInt( digit )] = self.charToIndex( char );
           });
+
+          //добавляем ячейки с формулами в специальный объект
+          self.formulaCells[row] = cell;
 
         } else {
           this.table.rows[row].cells[cell].textContent = text;
@@ -580,14 +606,9 @@ MyExcel.prototype.fillCells = function (curSheet) {
 
 };
 
-  var widgetEvent = new CustomEvent("changePartOfFormula", {
-    bubbles: true
-  });
-MyExcel.prototype.formulaRecalculation = function () {
-
-
-
-};
+var widgetEvent = new CustomEvent("changePartOfFormula", {
+  bubbles: true
+});
 
 
 MyExcel.prototype.setCurrentSheet = function (index) {
