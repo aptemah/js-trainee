@@ -251,7 +251,6 @@ MyExcel.prototype.cellSelect = function () {
       targetCell.addEventListener("click", inputCreating);
       self.table.addEventListener("click", deleteHoverClass);
 
-
       function inputCreating (e) {
 
         self.table.removeEventListener("click", self.hoverFunction);
@@ -261,6 +260,7 @@ MyExcel.prototype.cellSelect = function () {
 
         input.addEventListener("keypress", enterButton);
         input.addEventListener("keyup", escapeButton);
+
         try {//если кликаешь по пустой ячейке (которой, естественно, нет в sheetObject, сыпятся ошибки. Чтоб не делать проверки, решил заюзать try catch)
           if (self.sheetObject[self.currentSheet][rowIndex][cellIndex]) {input.value = self.sheetObject[self.currentSheet][rowIndex][cellIndex];
           } else {
@@ -291,6 +291,10 @@ MyExcel.prototype.cellSelect = function () {
           input.value = globalInput.value;
         };
 
+        globalInput.value = input.value;
+
+        self.globalInput.addEventListener("keypress", enterButton);
+        self.globalInput.addEventListener("keyup", escapeButton);
       };
 
 
@@ -331,12 +335,16 @@ MyExcel.prototype.cellSelect = function () {
         if (key === 27) {
           input.value = self.oldValue;
           deleteHoverClass();
-          input.parentElement.textContent = input.value;
-          input = null;
+          targetCell.textContent = input.value;
+          //self.globalInput.value = "";
 
           self.table.removeEventListener("click", addReference);
           self.table.removeEventListener("click", deleteHoverClass);
           self.table.addEventListener("click", self.hoverFunction);
+
+          self.globalInput.removeEventListener("keypress", enterButton);
+          self.globalInput.removeEventListener("keyup", escapeButton);
+
           inputUnfocus();
         }
 
@@ -346,6 +354,8 @@ MyExcel.prototype.cellSelect = function () {
       function saveValue() {
 
         deleteHoverClass();
+
+        self.globalInput.value = "";
 
         var currentSheet = self.tabsBlock.querySelector(":checked").value;
 
@@ -357,7 +367,7 @@ MyExcel.prototype.cellSelect = function () {
         self.updateSheet();
 
         if (self.ifFormula(input.value)) {
-          input.parentElement.textContent = self.formulaParse( input.value );
+          targetCell.textContent = self.formulaParse( input.value );
           self.table.dispatchEvent(widgetEvent);
 
           //добавляем ячейки со ссылками в специальный объект
@@ -374,7 +384,7 @@ MyExcel.prototype.cellSelect = function () {
           self.formulaCells[targetCell.parentElement.rowIndex] = targetCell.cellIndex;
 
         } else {
-          input.parentElement.textContent = input.value
+          targetCell.textContent = input.value
         }
 
         //Триггерим пересчет формул, если мы изменяем ячейку, на которую ссылаемся из других ячеек (self.linkCells)
@@ -383,12 +393,13 @@ MyExcel.prototype.cellSelect = function () {
           if (self.linkCells[targetCell.parentElement.rowIndex + 1] == targetCell.cellIndex) {console.log(self.linkCells);self.table.dispatchEvent(widgetEvent)}
         }
 
-        input = null;
-
         self.table.removeEventListener("click", addReference);
         self.table.removeEventListener("click", deleteHoverClass);
         self.table.addEventListener("click", self.hoverFunction);
         inputUnfocus();
+
+        self.globalInput.removeEventListener("keypress", enterButton);
+        self.globalInput.removeEventListener("keyup", escapeButton);
       };
 
 
