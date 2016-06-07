@@ -19,6 +19,7 @@ MyExcel.prototype.init = function (block, settings) {
   self.settings = settings;
   self.tableName = block;//определяем имя таблицы. Объект в Local Storage будет называться так же
   this.parentBlock = document.getElementById(block);
+  this.parentBlock.className = "table-wrap"
 
   if (localStorage.getItem(self.tableName)) {
 
@@ -231,7 +232,7 @@ MyExcel.prototype.charToIndex = function (char) {
 
 
 MyExcel.prototype.creatingTableDom = function (currentSheet, rows, columns) {
-  //создание DOM таблицы
+
   if (currentSheet == undefined) {
     this.currentSheet = this.tabsBlock.querySelector(":checked").value;
   } else { this.currentSheet = currentSheet };
@@ -280,6 +281,7 @@ MyExcel.prototype.creatingTableDom = function (currentSheet, rows, columns) {
   this.parentBlock.scrollTop = this.scrollTopPosition();
   this.parentBlock.scrollLeft = this.scrollLeftPosition();
   this.makeGrid();
+
 };
 
 
@@ -847,9 +849,9 @@ MyExcel.prototype.cellParse = function(indexOfCell) {
 
   var cellIndex = this.charToIndex( indexOfCell.match(/[a-z]{1,}/i)[0] );
   var rowIndex = indexOfCell.match(/\d{1,}/)[0];
-
-  var string = this.sheetObject[this.currentSheet][rowIndex - 1][cellIndex];
-
+  try {
+    var string = this.sheetObject[this.currentSheet][rowIndex - 1][cellIndex];
+  } catch (e) {console.log("пустой блок!")}
   if (string == undefined) {return 0}
 
   if (string.search(/^=/) != "-1") {

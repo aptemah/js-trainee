@@ -1,0 +1,114 @@
+@charset "UTF-8";
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: Arial, Helvetica, sans-serif;
+}
+body {
+  line-height: 1;
+}
+.table-wrap {
+  position: relative;
+  overflow: auto;
+}
+.super-table {
+  border-collapse: collapse;
+  table-layout: fixed;
+  width: 100%;
+  margin: 20px 0 0 30px;
+}
+.super-table td {
+  border: 1px solid #000;
+  width: 80px;
+  height: 20px;
+  background-color: #fff;
+  overflow: hidden;
+  font-size: 12px;
+}
+.super-table td.hover {
+  background-color: rgba(209, 209, 209, 0.36);
+}
+.super-table td input:focus {
+  background-color: #D1D1D1;
+  outline: none;
+}
+.super-table td.error {
+  color: #f00;
+}
+.super-table input {
+  display: block;
+  border: none;
+  height: 100%;
+  width: 100%;
+  background: transparent;
+  font-size: 12px;
+}
+.tabs-wrap input[type="radio"] {
+  height: 0;
+  width: 0;
+  opacity: 0;
+}
+.tabs-wrap label {
+  display: inline-block;
+  position: relative;
+  padding: 1px 5px;
+  min-width: 40px;
+}
+.tabs-wrap input[type="radio"]:checked + label {
+  background-color: #D1D1D1;
+}
+.tabs-wrap label div {
+  display: none;
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 15px;
+  height: 16px;
+  background-color: red;
+  text-align: center;
+}
+.tabs-wrap label:hover div {
+ display: inline-block; 
+}
+.super-table-rows {
+  position: absolute;
+  top: 20px;
+  left: 0;
+  border-collapse: collapse;
+  table-layout: fixed;
+  background-color: #D1D1D1;
+}
+.super-table-rows td {
+  width: 30px;
+  height: 20px;
+  border: 1px solid #000;
+  text-align: center;
+}
+.super-table-columns {
+  position: absolute;
+  width: 100%;
+  top: 0;
+  left: 30px;
+  border-collapse: collapse;
+  table-layout: fixed;
+  background-color: #D1D1D1;
+}
+.super-table-columns td {
+  width: 80px;
+  height: 20px;
+  border: 1px solid #000;
+  text-align: center;
+}
+.global-input {
+  position: absolute;
+  z-index: 1;
+  background: #EEE;
+  width: 50%;
+  transform: translateY(-100%);
+  transition: all .5s;
+}
+.global-input.active {
+  display: block;
+  transform: translateY(0%);
+}
