@@ -49,6 +49,9 @@ table td input:focus {
   background-color: #D1D1D1;
   outline: none;
 }
+table td.error {
+  color: #f00;
+}
 table input {
   display: block;
   border: none;
@@ -65,7 +68,7 @@ table input {
 .tabs-wrap label {
   display: inline-block;
   position: relative;
-  padding: 5px 5px;
+  padding: 1px 5px;
   min-width: 40px;
 }
 .tabs-wrap input[type="radio"]:checked + label {
@@ -115,9 +118,13 @@ table input {
 }
 .global-input {
   position: absolute;
-  display: none;
   z-index: 1;
+  background: #EEE;
+  width: 50%;
+  transform: translateY(-100%);
+  transition: all .5s;
 }
 .global-input.active {
   display: block;
+  transform: translateY(0%);
 }

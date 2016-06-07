@@ -240,21 +240,21 @@ MyExcel.prototype.cellSelect = function () {
 
       var rowIndex = e.target.parentElement.rowIndex;
       var cellIndex = e.target.cellIndex;
-      var targetCell = self.table.tBodies[0].rows[rowIndex].cells[cellIndex];
+      self.targetCell = self.table.tBodies[0].rows[rowIndex].cells[cellIndex];
       var input = document.createElement("INPUT");
 
       self.selectedCell = self.indexToChar(cellIndex - 1) + (rowIndex - 1);
 
-      targetCell.className += "hover";
+      self.targetCell.className += " hover";
 
       window.addEventListener("keydown", inputCreating);
-      targetCell.addEventListener("click", inputCreating);
+      self.targetCell.addEventListener("click", inputCreating);
       self.table.addEventListener("click", deleteHoverClass);
 
       function inputCreating (e) {
 
         self.table.removeEventListener("click", self.hoverFunction);
-        targetCell.removeEventListener("click", inputCreating);
+        self.targetCell.removeEventListener("click", inputCreating);
         self.table.removeEventListener("click", deleteHoverClass);
         setTimeout(function(){self.table.addEventListener("click", addReference)});
 
@@ -268,9 +268,9 @@ MyExcel.prototype.cellSelect = function () {
           }
         } catch(err) {}
 
-        self.oldValue = targetCell.textContent;//записываем старое значение, чтобы была возможность отменить ввод по escape
-        targetCell.textContent = null;
-        targetCell.appendChild(input);
+        self.oldValue = self.targetCell.textContent;//записываем старое значение, чтобы была возможность отменить ввод по escape
+        self.targetCell.textContent = null;
+        self.targetCell.appendChild(input);
         input.focus();
         inputBinding();
         window.removeEventListener("keydown", inputCreating);
@@ -311,9 +311,9 @@ MyExcel.prototype.cellSelect = function () {
 
       function deleteHoverClass() {
 
-        targetCell.className = targetCell.className.replace(/\bhover\b/,'');
+        self.targetCell.className = self.targetCell.className.replace(/\bhover\b/,'');
         window.removeEventListener("keydown", inputCreating);
-        targetCell.removeEventListener("click", inputCreating);
+        self.targetCell.removeEventListener("click", inputCreating);
         self.table.removeEventListener("click", deleteHoverClass);
 
       }
@@ -335,7 +335,7 @@ MyExcel.prototype.cellSelect = function () {
         if (key === 27) {
           input.value = self.oldValue;
           deleteHoverClass();
-          targetCell.textContent = input.value;
+          self.targetCell.textContent = input.value;
           //self.globalInput.value = "";
 
           self.table.removeEventListener("click", addReference);
@@ -367,12 +367,11 @@ MyExcel.prototype.cellSelect = function () {
         self.updateSheet();
 
         if (self.ifFormula(input.value)) {
-          targetCell.textContent = self.formulaParse( input.value );
+          self.targetCell.textContent = self.formulaParse( input.value );
           self.table.dispatchEvent(widgetEvent);
 
           //добавляем ячейки со ссылками в специальный объект
           var formulaArray = input.value.match(/[a-z]{1,}\d{1,}/gi);
-          console.log(formulaArray);
           if (formulaArray != null)
           formulaArray.forEach(function(i){
           var char = i.match(/[a-z]{1,}/i)[0],
@@ -381,16 +380,16 @@ MyExcel.prototype.cellSelect = function () {
           });
 
           //добавляем ячейки с формулами в специальный объект
-          self.formulaCells[targetCell.parentElement.rowIndex] = targetCell.cellIndex;
+          self.formulaCells[self.targetCell.parentElement.rowIndex] = self.targetCell.cellIndex;
 
         } else {
-          targetCell.textContent = input.value
+          self.targetCell.textContent = input.value
         }
 
         //Триггерим пересчет формул, если мы изменяем ячейку, на которую ссылаемся из других ячеек (self.linkCells)
-        if (self.linkCells.hasOwnProperty(targetCell.parentElement.rowIndex + 1)) {
+        if (self.linkCells.hasOwnProperty(self.targetCell.parentElement.rowIndex + 1)) {
 
-          if (self.linkCells[targetCell.parentElement.rowIndex + 1] == targetCell.cellIndex) {console.log(self.linkCells);self.table.dispatchEvent(widgetEvent)}
+          if (self.linkCells[self.targetCell.parentElement.rowIndex + 1] == self.targetCell.cellIndex) {self.table.dispatchEvent(widgetEvent)}
         }
 
         self.table.removeEventListener("click", addReference);
@@ -583,6 +582,7 @@ MyExcel.prototype.fillCells = function (curSheet) {
       var row = x,
           cell = parseInt(self.formulaCells[x]),
           text = self.sheetObject[self.currentSheet][row][cell];
+      self.targetCell = self.table.rows[row].cells[cell];
       self.table.rows[row].cells[cell].textContent = self.formulaParse( text );
     }
   });
@@ -609,6 +609,7 @@ MyExcel.prototype.fillCells = function (curSheet) {
         var text = currentRow[cell];
         var cellText = this.table.rows[row].cells[cell].textContent;
         if (text.search(/^=/) != "-1") {//проверка не формула ли это
+          self.targetCell = this.table.rows[row].cells[cell];
           this.table.rows[row].cells[cell].textContent = self.formulaParse( text );
 
           //добавляем ячейки со ссылками в специальный объект
@@ -814,9 +815,14 @@ MyExcel.prototype.formulaParse = function (string) {
       arrayForEval.push(item);
     }
   });
-
+  try {
   result = eval(arrayForEval.toString().replace(/,/g," "));
-
+  } catch(e){
+    result = "!!!ERROR!!!";
+    self.targetCell.className += " error";
+    return result;
+  }
+  self.targetCell.className = self.targetCell.className.replace(/ error\b/,'');
   return result;
 
 };
