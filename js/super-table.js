@@ -84,7 +84,30 @@ MyExcel.prototype.init = function (block, settings) {
           //заполняем ячейки, если они присутствуют в sheetObject
           if (self.sheetObject[self.currentSheet][row.rowIndex]) {
             if (self.sheetObject[self.currentSheet][row.rowIndex][cell.cellIndex]) {
-              cell.textContent = self.sheetObject[self.currentSheet][row.rowIndex][cell.cellIndex]
+
+              var text = self.sheetObject[self.currentSheet][row.rowIndex][cell.cellIndex];
+
+              self.targetCell = cell;
+
+              if (text.search(/^=/) != "-1") {//проверка не формула ли это
+
+                cell.textContent = self.formulaParse( text );
+
+                //добавляем ячейки со ссылками в специальный объект
+                var formulaArray = text.match(/[a-z]{1,}\d{1,}/gi);
+                if (formulaArray != null)
+                formulaArray.forEach(function(i){
+                var char = i.match(/[a-z]{1,}/i)[0],
+                    digit = i.match(/\d{1,}/i)[0];
+                  self.linkCells[parseInt( digit )] = self.charToIndex( char );
+                });
+
+                //добавляем ячейки с формулами в специальный объект
+                self.formulaCells[row.rowIndex] = cell.cellIndex;
+
+              } else {
+                cell.textContent = text;
+              };
             }
           }
 
@@ -112,7 +135,30 @@ MyExcel.prototype.init = function (block, settings) {
           //заполняем ячейки, если они присутствуют в sheetObject
           if (self.sheetObject[self.currentSheet][row]) {
             if (self.sheetObject[self.currentSheet][row][cell.cellIndex]) {
-              cell.textContent = self.sheetObject[self.currentSheet][row][cell.cellIndex]
+              var text = self.sheetObject[self.currentSheet][row][cell.cellIndex];
+
+              self.targetCell = cell;
+
+              if (text.search(/^=/) != "-1") {//проверка не формула ли это
+
+                cell.textContent = self.formulaParse( text );
+
+                //добавляем ячейки со ссылками в специальный объект
+                var formulaArray = text.match(/[a-z]{1,}\d{1,}/gi);
+                if (formulaArray != null)
+                formulaArray.forEach(function(i){
+                var char = i.match(/[a-z]{1,}/i)[0],
+                    digit = i.match(/\d{1,}/i)[0];
+                  self.linkCells[parseInt( digit )] = self.charToIndex( char );
+                });
+
+                //добавляем ячейки с формулами в специальный объект
+                self.formulaCells[row] = cell.cellIndex;
+
+              } else {
+                cell.textContent = text;
+              };
+
             }
           }
 
