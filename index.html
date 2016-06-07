@@ -5,28 +5,23 @@
     <meta charset="utf-8">
     <title>My google docs with black Jack and scripts</title>
     <link href="css/main.css" rel="stylesheet">
-    <script type="text/javascript" src="js/main.js"></script>
+    <script type="text/javascript" src="js/super-table.js"></script>
 </head>
 <body>
   <div id="table-wrap"></div>
-  <!-- <div id="table-wrap2"></div> -->
+  <div id="table-wrap2"></div>
   <script type="text/javascript">
 
     var newTable = new MyExcel;
-    newTable.init("table-wrap", {
-      rows : 100,
-      columns : 100,
-      width : 600,
-      height : 600
-    });
+    newTable.init("table-wrap", {});
 
-/*    var newTable = new MyExcel;
+    var newTable = new MyExcel;
     newTable.init("table-wrap2", {
       rows : 50,
       columns : 200,
       width : 500,
       height : 300
-    });*/
+    });
   </script>
 </body>
 </html>

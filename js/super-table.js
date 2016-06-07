@@ -16,6 +16,7 @@ MyExcel.prototype.init = function (block, settings) {
 
   var self = this;
 
+  self.settings = settings;
   self.tableName = block;//определяем имя таблицы. Объект в Local Storage будет называться так же
   this.parentBlock = document.getElementById(block);
 
@@ -48,11 +49,11 @@ MyExcel.prototype.init = function (block, settings) {
   this.parentBlock.parentNode.insertBefore(self.tabsBlock, this.parentBlock.nextSibling);
   self.tabGenerating();
 
-  if (settings.width != undefined && settings.width != null) { widthOfTable = settings.width} else {
+  if (self.settings.width != undefined && self.settings.width != null) { widthOfTable = self.settings.width} else {
     //из ширины вычитаем ширину скролла
     var widthOfTable = this.viewportWidth - self.scrollWidth();
   }
-  if (settings.height != undefined && settings.height != null) { heightOfTable = settings.height} else {
+  if (self.settings.height != undefined && self.settings.height != null) { heightOfTable = self.settings.height} else {
     //из высоты вычитаем отступ сверху и высоту табов
     var heightOfTable = this.viewportHeight - parseInt(window.getComputedStyle(this.parentBlock).getPropertyValue('margin-top')) - self.tabsBlock.clientHeight;
   }
@@ -62,7 +63,7 @@ MyExcel.prototype.init = function (block, settings) {
   self.cellWidth = 80;
   self.cellHeight = 20;
 
-  self.creatingTableDom(false, settings.rows, settings.columns);
+  self.creatingTableDom(false, self.settings.rows, self.settings.columns);
 
   this.parentBlock.addEventListener("scroll", function(){
 
@@ -123,7 +124,6 @@ MyExcel.prototype.init = function (block, settings) {
   });
 
   this.getCoords();
-  this.makeGrid(this.table);
 
 };
 
@@ -205,6 +205,10 @@ MyExcel.prototype.creatingTableDom = function (currentSheet, rows, columns) {
     if (columnsInitialAmount < maxCellNumber) {columnsInitialAmount = maxCellNumber + 1};
   } else { columnsInitialAmount = columns }
 
+  if (this.globalInput) {
+    this.parentBlock.removeChild(this.globalInput);
+  }
+
   this.globalInput = document.createElement("INPUT");
   this.globalInput.id = this.tableName + "-global-input";
   this.globalInput.className = "global-input";
@@ -227,6 +231,9 @@ MyExcel.prototype.creatingTableDom = function (currentSheet, rows, columns) {
   this.fillCells(this.currentSheet);//Заполняем ячейки
   this.cellSelect();
 
+  this.parentBlock.scrollTop = this.scrollTopPosition();
+  this.parentBlock.scrollLeft = this.scrollLeftPosition();
+  this.makeGrid();
 };
 
 
@@ -458,7 +465,7 @@ MyExcel.prototype.makeGrid = function () {
 
   }
 
-  var tableRows = Array.prototype.slice.call(this.table.rows);
+  var tableRows = Array.prototype.slice.call(self.table.rows);
   var firstRowCells = Array.prototype.slice.call(tableRows[0].cells);
 
   //таблица для строк
@@ -496,6 +503,7 @@ MyExcel.prototype.makeGrid = function () {
 
 MyExcel.prototype.tabDelete = function (index, elements) {
 
+  var self = this;
   //удаляем таб
   var tabsWrap = this.tabsBlock;
   elements.forEach((item, i, arr) => {
@@ -512,12 +520,12 @@ MyExcel.prototype.tabDelete = function (index, elements) {
 
     this.tabCreate(0, "sheet0", true);
     this.sheetCreate(0);
-    this.creatingTableDom();
+    this.creatingTableDom(false, self.settings.rows, self.settings.columns);
 
   } else {
 
     tabsWrap.querySelector("#" + this.tableName + "tab" + sheetToRedirect).checked = true;
-    this.creatingTableDom();
+    this.creatingTableDom(false, self.settings.rows, self.settings.columns);
     this.setCurrentSheet(sheetToRedirect);
 
   }
@@ -547,15 +555,13 @@ MyExcel.prototype.setReaddressSheet = function (index) {
 
 
 MyExcel.prototype.tabSwitching = function () {
-
+  var self = this;
   var tabsWrap = this.tabsBlock;
   tabsWrap.addEventListener("click", (e) =>{
     if (e.target.nodeName == "LABEL") {
       var clickedTabIndex = e.target.previousElementSibling.value;
       this.setCurrentSheet(clickedTabIndex);
-      this.creatingTableDom(clickedTabIndex);
-      this.parentBlock.scrollTop = this.scrollPosition();
-      this.makeGrid();
+      this.creatingTableDom(clickedTabIndex, self.settings.rows, self.settings.columns);
     }
 
     if (e.target.className == "del") {
@@ -588,7 +594,12 @@ MyExcel.prototype.fillCells = function (curSheet) {
   });
 
   if (!curSheet) {
-    var currentSheet = self.tabsBlock.querySelector(":checked").value;
+    if (self.tabsBlock.querySelector(":checked")) {
+
+      var currentSheet = self.tabsBlock.querySelector(":checked").value;
+  
+    } else {var currentSheet = 0}
+    
   } else { var currentSheet = curSheet }
 
   this.currentSheet = currentSheet;
@@ -713,6 +724,8 @@ MyExcel.prototype.tabGenerating = function () {
 
 MyExcel.prototype.tabCreate = function (counter, name, ifCurrent, isNew) {
 
+  var self = this;
+
   var lastInput = this.tabsBlock.querySelector("input:last-of-type");
   if (counter == undefined) {
     if (lastInput != undefined) {
@@ -750,7 +763,7 @@ MyExcel.prototype.tabCreate = function (counter, name, ifCurrent, isNew) {
   if (isNew == true) {
     this.sheetCreate(counter);
     tabsWrap.querySelector("[type='radio'][value='" + counter + "']").checked = true;
-    this.creatingTableDom();
+    this.creatingTableDom(false, self.settings.rows, self.settings.columns);
   }
 
 };
@@ -853,7 +866,14 @@ MyExcel.prototype.scrollWidth = function (string) {
 }
 
 
-MyExcel.prototype.scrollPosition = function (string) {
+MyExcel.prototype.scrollTopPosition = function (string) {
+
+  return 0;
+
+}
+
+
+MyExcel.prototype.scrollLeftPosition = function (string) {
 
   return 0;
 
