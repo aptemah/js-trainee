@@ -301,7 +301,7 @@ MyExcel.prototype.cellSelect = function () {
 
       var rowIndex = e.target.parentElement.rowIndex;
       var cellIndex = e.target.cellIndex;
-      self.targetCell = self.table.tBodies[0].rows[rowIndex].cells[cellIndex];
+      self.targetCell = e.target;
       var input = document.createElement("INPUT");
 
       self.selectedCell = self.indexToChar(cellIndex - 1) + (rowIndex - 1);
@@ -310,7 +310,7 @@ MyExcel.prototype.cellSelect = function () {
 
       window.addEventListener("keydown", inputCreating);
       self.targetCell.addEventListener("click", inputCreating);
-      self.table.addEventListener("click", deleteHoverClass);
+      self.table.addEventListener("click", deleteHoverClass, true);
 
       function inputCreating (e) {
 
@@ -642,7 +642,6 @@ MyExcel.prototype.fillCells = function (curSheet) {
       var row = x,
           cell = parseInt(self.formulaCells[x]),
           text = self.sheetObject[self.currentSheet][row][cell];
-      self.targetCell = self.table.rows[row].cells[cell];
       self.table.rows[row].cells[cell].textContent = self.formulaParse( text );
     }
   });
