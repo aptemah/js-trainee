@@ -16,7 +16,13 @@ MyExcel.prototype.init = function (block, settings) {
 
   var self = this;
 
+  self.widgetEvent = new CustomEvent("changePartOfFormula", {
+    bubbles: true
+  });
+
   self.settings = settings;
+  if (!self.settings) {self.settings = {}};
+
   self.tableName = block;//определяем имя таблицы. Объект в Local Storage будет называться так же
   this.parentBlock = document.getElementById(block);
   this.parentBlock.className = "table-wrap"
@@ -423,7 +429,7 @@ MyExcel.prototype.cellSelect = function () {
 
         if (self.ifFormula(input.value)) {
           self.targetCell.textContent = self.formulaParse( input.value );
-          self.table.dispatchEvent(widgetEvent);
+          self.table.dispatchEvent(self.widgetEvent);
 
           //добавляем ячейки со ссылками в специальный объект
           var formulaArray = input.value.match(/[a-z]{1,}\d{1,}/gi);
@@ -444,7 +450,7 @@ MyExcel.prototype.cellSelect = function () {
         //Триггерим пересчет формул, если мы изменяем ячейку, на которую ссылаемся из других ячеек (self.linkCells)
         if (self.linkCells.hasOwnProperty(self.targetCell.parentElement.rowIndex + 1)) {
 
-          if (self.linkCells[self.targetCell.parentElement.rowIndex + 1] == self.targetCell.cellIndex) {self.table.dispatchEvent(widgetEvent)}
+          if (self.linkCells[self.targetCell.parentElement.rowIndex + 1] == self.targetCell.cellIndex) {self.table.dispatchEvent(self.widgetEvent)}
         }
 
         self.table.removeEventListener("click", addReference);
@@ -691,10 +697,6 @@ MyExcel.prototype.fillCells = function (curSheet) {
   }
 
 };
-
-var widgetEvent = new CustomEvent("changePartOfFormula", {
-  bubbles: true
-});
 
 
 MyExcel.prototype.setCurrentSheet = function (index) {
