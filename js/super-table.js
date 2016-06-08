@@ -1,4 +1,4 @@
-
+'use strict'
 
 function MyExcel() {
 
@@ -296,43 +296,65 @@ MyExcel.prototype.cellSelect = function () {
   var self = this;
 
   this.hoverFunction = function (e) {
-
+    
     if (e.target.tagName == "TD") {
 
-      var rowIndex = e.target.parentElement.rowIndex;
-      var cellIndex = e.target.cellIndex;
+      if (e.target != self.targetCell) {
+        if (self.previousCell) {deleteHoverClass(e);}
+        addHoverClass(e);
+      } else {
+        inputCreating(e);
+      }
+
       self.targetCell = e.target;
-      var input = document.createElement("INPUT");
 
-      self.selectedCell = self.indexToChar(cellIndex - 1) + (rowIndex - 1);
-
-      self.targetCell.className += " hover";
+      self.selectedCell = self.indexToChar(self.targetCell.cellIndex - 1) + (e.target.parentElement.rowIndex - 1);
 
       window.addEventListener("keydown", inputCreating);
-      self.targetCell.addEventListener("click", inputCreating);
-      self.table.addEventListener("click", deleteHoverClass, true);
+      self.table.removeEventListener("click", this.hoverFunction);
+
+      function addHoverClass(e) {
+        debugger;
+        self.targetCell = e.target;
+        self.targetCell.className += " hover";
+        self.previousCell = e.target;
+
+      }
+
+
+      function deleteHoverClass(e) {
+        debugger;
+        self.previousCell.className = self.previousCell.className.replace(/\bhover\b/,'');
+        window.removeEventListener("keydown", inputCreating);
+        self.previousCell.removeEventListener("click", inputCreating);
+        self.table.removeEventListener("click", deleteHoverClass);
+        if (e) self.previousCell = e.target;
+      }
+
 
       function inputCreating (e) {
-
+        debugger;
+        self.input = document.createElement("INPUT");
         self.table.removeEventListener("click", self.hoverFunction);
         self.targetCell.removeEventListener("click", inputCreating);
+        window.removeEventListener("keydown", inputCreating);
         self.table.removeEventListener("click", deleteHoverClass);
         setTimeout(function(){self.table.addEventListener("click", addReference)});
 
-        input.addEventListener("keypress", enterButton);
-        input.addEventListener("keyup", escapeButton);
+        self.input.addEventListener("keypress", enterButton);
+        self.input.addEventListener("keyup", escapeButton);
 
         try {//если кликаешь по пустой ячейке (которой, естественно, нет в sheetObject, сыпятся ошибки. Чтоб не делать проверки, решил заюзать try catch)
-          if (self.sheetObject[self.currentSheet][rowIndex][cellIndex]) {input.value = self.sheetObject[self.currentSheet][rowIndex][cellIndex];
+          if (self.sheetObject[self.currentSheet][e.target.parentElement.rowIndex][self.targetCell.cellIndex]) {self.input.value = self.sheetObject[self.currentSheet][e.target.parentElement.rowIndex][self.targetCell.cellIndex];
           } else {
-            input.value = "";
+            self.input.value = "";
           }
         } catch(err) {}
 
         self.oldValue = self.targetCell.textContent;//записываем старое значение, чтобы была возможность отменить ввод по escape
         self.targetCell.textContent = null;
-        self.targetCell.appendChild(input);
-        input.focus();
+        self.targetCell.appendChild(self.input);
+        self.input.focus();
         inputBinding();
         window.removeEventListener("keydown", inputCreating);
 
@@ -340,19 +362,19 @@ MyExcel.prototype.cellSelect = function () {
 
 
       function inputBinding () {
-
+        debugger;
         var globalInput = self.globalInput;
         globalInput.className = globalInput.className + " active"
 
-        input.oninput = function() {
-          globalInput.value = input.value;
+        self.input.oninput = function() {
+          globalInput.value = self.input.value;
         };
 
         globalInput.oninput = function() {
-          input.value = globalInput.value;
+          self.input.value = globalInput.value;
         };
 
-        globalInput.value = input.value;
+        globalInput.value = self.input.value;
 
         self.globalInput.addEventListener("keypress", enterButton);
         self.globalInput.addEventListener("keyup", escapeButton);
@@ -360,28 +382,19 @@ MyExcel.prototype.cellSelect = function () {
 
 
       function addReference (e) {
-
-        if (e.target != input) {
-          if (input.value.search(/^=/) != "-1") {
-            input.value = input.value + self.selectedCellCoords;
-            input.focus();
+        debugger;
+        if (e.target != self.input) {
+          if (self.input.value.search(/^=/) != "-1") {
+            self.input.value = self.input.value + self.selectedCellCoords;
+            self.input.focus();
           } else { saveValue() }
-        } else { saveValue() }
+        } else {  }
 
       };
 
-      function deleteHoverClass() {
-
-        self.targetCell.className = self.targetCell.className.replace(/\bhover\b/,'');
-        window.removeEventListener("keydown", inputCreating);
-        self.targetCell.removeEventListener("click", inputCreating);
-        self.table.removeEventListener("click", deleteHoverClass);
-
-      }
-
 
       function enterButton (e) {
-
+        debugger;
         var key = e.which || e.keyCode;
         if (key === 13) {
           saveValue();
@@ -391,13 +404,12 @@ MyExcel.prototype.cellSelect = function () {
 
 
       function escapeButton (e) {
-
+      debugger;
         var key = e.which || e.keyCode;
         if (key === 27) {
-          input.value = self.oldValue;
+          self.input.value = self.oldValue;
           deleteHoverClass();
-          self.targetCell.textContent = input.value;
-          //self.globalInput.value = "";
+          self.targetCell.textContent = self.input.value;
 
           self.table.removeEventListener("click", addReference);
           self.table.removeEventListener("click", deleteHoverClass);
@@ -413,26 +425,26 @@ MyExcel.prototype.cellSelect = function () {
 
 
       function saveValue() {
-
+        debugger;
         deleteHoverClass();
 
         self.globalInput.value = "";
 
         var currentSheet = self.tabsBlock.querySelector(":checked").value;
 
-        if (!self.sheetObject[currentSheet].hasOwnProperty(rowIndex)) {
-          self.sheetObject[currentSheet][rowIndex] = {};
+        if (!self.sheetObject[currentSheet].hasOwnProperty(e.target.parentElement.rowIndex)) {
+          self.sheetObject[currentSheet][e.target.parentElement.rowIndex] = {};
         }
 
-        self.sheetObject[currentSheet][rowIndex][cellIndex] = input.value;
+        self.sheetObject[currentSheet][e.target.parentElement.rowIndex][self.targetCell.cellIndex] = self.input.value;
         self.updateSheet();
 
-        if (self.ifFormula(input.value)) {
-          self.targetCell.textContent = self.formulaParse( input.value );
+        if (self.ifFormula(self.input.value)) {
+          self.targetCell.textContent = self.formulaParse( self.input.value );
           self.table.dispatchEvent(self.widgetEvent);
 
           //добавляем ячейки со ссылками в специальный объект
-          var formulaArray = input.value.match(/[a-z]{1,}\d{1,}/gi);
+          var formulaArray = self.input.value.match(/[a-z]{1,}\d{1,}/gi);
           if (formulaArray != null)
           formulaArray.forEach(function(i){
           var char = i.match(/[a-z]{1,}/i)[0],
@@ -444,7 +456,7 @@ MyExcel.prototype.cellSelect = function () {
           self.formulaCells[self.targetCell.parentElement.rowIndex] = self.targetCell.cellIndex;
 
         } else {
-          self.targetCell.textContent = input.value
+          self.targetCell.textContent = self.input.value
         }
 
         //Триггерим пересчет формул, если мы изменяем ячейку, на которую ссылаемся из других ячеек (self.linkCells)
@@ -464,8 +476,8 @@ MyExcel.prototype.cellSelect = function () {
 
 
       function inputUnfocus () {
-
-        self.globalInput.className = self.globalInput.className.replace(/\b active\b/,'');
+        debugger;
+        self.globalInput.className = self.globalInput.className.replace(/\bactive\b/,'');
 
       };
 
