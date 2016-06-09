@@ -310,11 +310,10 @@ MyExcel.prototype.cellSelect = function () {
 
       self.selectedCell = self.indexToChar(self.targetCell.cellIndex - 1) + (e.target.parentElement.rowIndex - 1);
 
-      window.addEventListener("keydown", inputCreating);
       self.table.removeEventListener("click", this.hoverFunction);
 
       function addHoverClass(e) {
-        debugger;
+        
         self.targetCell = e.target;
         self.targetCell.className += " hover";
         self.previousCell = e.target;
@@ -323,9 +322,9 @@ MyExcel.prototype.cellSelect = function () {
 
 
       function deleteHoverClass(e) {
-        debugger;
+        
         self.previousCell.className = self.previousCell.className.replace(/\bhover\b/,'');
-        window.removeEventListener("keydown", inputCreating);
+        document.removeEventListener("keydown", inputCreating);
         self.previousCell.removeEventListener("click", inputCreating);
         self.table.removeEventListener("click", deleteHoverClass);
         if (e) self.previousCell = e.target;
@@ -333,11 +332,10 @@ MyExcel.prototype.cellSelect = function () {
 
 
       function inputCreating (e) {
-        debugger;
+        
         self.input = document.createElement("INPUT");
         self.table.removeEventListener("click", self.hoverFunction);
         self.targetCell.removeEventListener("click", inputCreating);
-        window.removeEventListener("keydown", inputCreating);
         self.table.removeEventListener("click", deleteHoverClass);
         setTimeout(function(){self.table.addEventListener("click", addReference)});
 
@@ -356,13 +354,12 @@ MyExcel.prototype.cellSelect = function () {
         self.targetCell.appendChild(self.input);
         self.input.focus();
         inputBinding();
-        window.removeEventListener("keydown", inputCreating);
 
       }
 
 
       function inputBinding () {
-        debugger;
+        
         var globalInput = self.globalInput;
         globalInput.className = globalInput.className + " active"
 
@@ -382,7 +379,7 @@ MyExcel.prototype.cellSelect = function () {
 
 
       function addReference (e) {
-        debugger;
+        
         if (e.target != self.input) {
           if (self.input.value.search(/^=/) != "-1") {
             self.input.value = self.input.value + self.selectedCellCoords;
@@ -394,7 +391,7 @@ MyExcel.prototype.cellSelect = function () {
 
 
       function enterButton (e) {
-        debugger;
+        
         var key = e.which || e.keyCode;
         if (key === 13) {
           saveValue();
@@ -404,7 +401,7 @@ MyExcel.prototype.cellSelect = function () {
 
 
       function escapeButton (e) {
-      debugger;
+      
         var key = e.which || e.keyCode;
         if (key === 27) {
           self.input.value = self.oldValue;
@@ -425,7 +422,7 @@ MyExcel.prototype.cellSelect = function () {
 
 
       function saveValue() {
-        debugger;
+        
         deleteHoverClass();
 
         self.globalInput.value = "";
@@ -476,7 +473,7 @@ MyExcel.prototype.cellSelect = function () {
 
 
       function inputUnfocus () {
-        debugger;
+        
         self.globalInput.className = self.globalInput.className.replace(/\bactive\b/,'');
 
       };
@@ -650,7 +647,7 @@ MyExcel.prototype.fillCells = function (curSheet) {
   self.linkCells = {};
 
   self.table.addEventListener("changePartOfFormula", function(){
-    for (x in self.formulaCells) {
+    for (var x in self.formulaCells) {
       var row = x,
           cell = parseInt(self.formulaCells[x]),
           text = self.sheetObject[self.currentSheet][row][cell];
